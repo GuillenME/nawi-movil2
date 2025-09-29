@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "273564520200",
+    "project_id": "nawi-movi",
+    "storage_bucket": "nawi-movi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273564520200:android:235eaddf9acd5662e6e6bd",
+        "android_client_info": {
+          "package_name": "com.example.nawii"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs-IlF1S2x6vUcE81vMKFBWwAxJFfdVE0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
