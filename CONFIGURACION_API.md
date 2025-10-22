@@ -5,7 +5,7 @@
 Todas las URLs de API han sido configuradas para usar tu servidor:
 
 ```
-Base URL: https://nawi-2.me/api
+Base URL: https://nawi.click/api
 ```
 
 ## 📋 Endpoints Implementados

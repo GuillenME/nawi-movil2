@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Método para login
   static Future<Map<String, dynamic>> login(

@@ -6,7 +6,7 @@ import 'package:nawii/services/auth_service.dart';
 
 class PasajeroService {
   final DatabaseReference database = FirebaseDatabase.instance.ref();
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Crear nuevo viaje
   Future<Map<String, dynamic>> crearViaje({

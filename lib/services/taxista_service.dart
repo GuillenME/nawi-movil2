@@ -7,7 +7,7 @@ import 'package:nawii/services/location_service_simple.dart';
 
 class TaxistaService {
   final DatabaseReference database = FirebaseDatabase.instance.ref();
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Conectar taxista (poner en línea)
   Future<void> conectar() async {
