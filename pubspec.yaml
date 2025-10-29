@@ -41,8 +41,8 @@ dependencies:
   # Shared preferences for local storage
   shared_preferences: ^2.2.3
   
-  # Google Maps (comentado temporalmente)
-  # google_maps_flutter: ^2.2.8          
+  # Google Maps
+  google_maps_flutter: ^2.2.8          
   # geolocator: ^8.2.1               
   # flutter_polyline_points: ^1.0.0     
   

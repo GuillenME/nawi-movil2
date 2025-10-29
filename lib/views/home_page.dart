@@ -5,6 +5,7 @@ import 'package:nawii/views/login_page.dart';
 import 'package:nawii/views/pasajero/solicitar_viaje_simple_page.dart';
 import 'package:nawii/views/taxista/taxista_home_page.dart';
 import 'package:nawii/views/perfil_page.dart';
+import 'package:nawii/views/mapa_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -143,6 +144,30 @@ class PasajeroHomePage extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          SizedBox(height: 20),
+
+          // Botón del Mapa
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MapaPage()),
+              );
+            },
+            icon: Icon(Icons.map, size: 24),
+            label: Text(
+              'Ver Mapa',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[700],
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
