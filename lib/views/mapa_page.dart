@@ -4,8 +4,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:nawii/services/location_service_simple.dart';
 
 class MapaPage extends StatefulWidget {
+  const MapaPage({super.key});
+
   @override
-  _MapaPageState createState() => _MapaPageState();
+  State<MapaPage> createState() => _MapaPageState();
 }
 
 class _MapaPageState extends State<MapaPage> {
@@ -20,7 +22,7 @@ class _MapaPageState extends State<MapaPage> {
   // Google Maps
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
-  CameraPosition _initialCameraPosition = CameraPosition(
+  CameraPosition _initialCameraPosition = const CameraPosition(
     target: LatLng(16.867, -92.094), // Ocosingo
     zoom: 15.0,
   );
@@ -39,12 +41,14 @@ class _MapaPageState extends State<MapaPage> {
       if (!hasPermission) {
         hasPermission = await LocationServiceSimple.requestLocationPermission();
         if (!hasPermission) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Se necesitan permisos de ubicación'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Se necesitan permisos de ubicación'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
           return;
         }
       }
@@ -66,12 +70,14 @@ class _MapaPageState extends State<MapaPage> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al obtener ubicación: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al obtener ubicación: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -118,7 +124,7 @@ class _MapaPageState extends State<MapaPage> {
     // Marcador del usuario
     newMarkers.add(
       Marker(
-        markerId: MarkerId('user_location'),
+        markerId: const MarkerId('user_location'),
         position: LatLng(_userLocation['latitude']!, _userLocation['longitude']!),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
         infoWindow: InfoWindow(
@@ -167,19 +173,19 @@ class _MapaPageState extends State<MapaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mapa Nawi'),
+        title: const Text('Mapa Nawi'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.my_location),
+            icon: const Icon(Icons.my_location),
             onPressed: _irAMiUbicacion,
             tooltip: 'Ir a mi ubicación',
           ),
         ],
       ),
       body: _isLoading
-          ? Center(
+          ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -213,11 +219,11 @@ class _MapaPageState extends State<MapaPage> {
                   left: 16,
                   right: 16,
                   child: Container(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black26,
                           blurRadius: 4,
@@ -228,7 +234,7 @@ class _MapaPageState extends State<MapaPage> {
                     child: Row(
                       children: [
                         Icon(Icons.my_location, color: Colors.blue[700]),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +257,7 @@ class _MapaPageState extends State<MapaPage> {
                           ),
                         ),
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.green[100],
                             borderRadius: BorderRadius.circular(12),
@@ -278,7 +284,7 @@ class _MapaPageState extends State<MapaPage> {
                     right: 0,
                     child: Container(
                       height: 200,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(16),
@@ -296,7 +302,7 @@ class _MapaPageState extends State<MapaPage> {
                         children: [
                           // Handle para arrastrar
                           Container(
-                            margin: EdgeInsets.only(top: 8),
+                            margin: const EdgeInsets.only(top: 8),
                             width: 40,
                             height: 4,
                             decoration: BoxDecoration(
@@ -305,7 +311,7 @@ class _MapaPageState extends State<MapaPage> {
                             ),
                           ),
                           Padding(
-                            padding: EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(16),
                             child: Text(
                               'Taxistas disponibles',
                               style: TextStyle(
@@ -317,18 +323,18 @@ class _MapaPageState extends State<MapaPage> {
                           ),
                           Expanded(
                             child: ListView.builder(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               itemCount: _taxisDisponibles.length,
                               itemBuilder: (context, index) {
                                 final taxista = _taxisDisponibles[index];
                                 final distancia = _calcularDistancia(taxista);
 
                                 return Card(
-                                  margin: EdgeInsets.only(bottom: 8),
+                                  margin: const EdgeInsets.only(bottom: 8),
                                   child: ListTile(
                                     leading: CircleAvatar(
                                       backgroundColor: Colors.green[700],
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.local_taxi,
                                         color: Colors.white,
                                         size: 20,
@@ -336,20 +342,20 @@ class _MapaPageState extends State<MapaPage> {
                                     ),
                                     title: Text(
                                       'Taxista ${taxista['id'].substring(0, 8)}...',
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
                                     ),
                                     subtitle: Row(
                                       children: [
                                         Icon(Icons.location_on, color: Colors.grey[600], size: 16),
-                                        SizedBox(width: 4),
+                                        const SizedBox(width: 4),
                                         Text('${distancia.toStringAsFixed(1)} km'),
-                                        SizedBox(width: 16),
-                                        Icon(Icons.star, color: Colors.orange, size: 16),
-                                        SizedBox(width: 4),
-                                        Text('4.5'),
+                                        const SizedBox(width: 16),
+                                        const Icon(Icons.star, color: Colors.orange, size: 16),
+                                        const SizedBox(width: 4),
+                                        const Text('4.5'),
                                       ],
                                     ),
-                                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                                     onTap: () {
                                       // Centrar el mapa en el taxista seleccionado
                                       _mapController!.animateCamera(

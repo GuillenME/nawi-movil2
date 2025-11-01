@@ -1,6 +1,7 @@
 import 'dart:math' as math;
+import 'package:location/location.dart';
 
-// Servicio de ubicación simplificado sin dependencias externas
+// Servicio de ubicación simplificado con plugin location
 class LocationServiceSimple {
   // Simular ubicación actual (Ocosingo, Chiapas)
   static Map<String, double> getCurrentLocation() {
@@ -10,21 +11,54 @@ class LocationServiceSimple {
     };
   }
 
-  // Simular solicitud de permisos
+  // Solicitar permisos de ubicación
   static Future<bool> requestLocationPermission() async {
-    // Simular que siempre se conceden los permisos
-    await Future.delayed(Duration(seconds: 1));
-    return true;
+    try {
+      Location location = Location();
+      bool serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) {
+          return false;
+        }
+      }
+
+      PermissionStatus permissionGranted = await location.hasPermission();
+      if (permissionGranted == PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != PermissionStatus.granted) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (e) {
+      print('Error requesting location permission: $e');
+      return false;
+    }
   }
 
-  // Simular verificación de permisos
+  // Verificar permisos de ubicación
   static Future<bool> hasLocationPermission() async {
-    return true;
+    try {
+      Location location = Location();
+      PermissionStatus permissionGranted = await location.hasPermission();
+      return permissionGranted == PermissionStatus.granted;
+    } catch (e) {
+      print('Error checking location permission: $e');
+      return false;
+    }
   }
 
-  // Simular servicios de ubicación habilitados
+  // Verificar si los servicios de ubicación están habilitados
   static Future<bool> isLocationServiceEnabled() async {
-    return true;
+    try {
+      Location location = Location();
+      return await location.serviceEnabled();
+    } catch (e) {
+      print('Error checking location service: $e');
+      return false;
+    }
   }
 
   // Calcular distancia entre dos puntos (fórmula de Haversine)

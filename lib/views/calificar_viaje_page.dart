@@ -6,10 +6,10 @@ class CalificarViajePage extends StatefulWidget {
   final String taxistaNombre;
 
   const CalificarViajePage({
-    Key? key,
+    super.key,
     required this.viajeId,
     required this.taxistaNombre,
-  }) : super(key: key);
+  });
 
   @override
   _CalificarViajePageState createState() => _CalificarViajePageState();
@@ -30,7 +30,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
   Future<void> _enviarCalificacion() async {
     if (_calificacion < 1.0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Por favor selecciona una calificación'),
           backgroundColor: Colors.orange,
         ),
@@ -87,19 +87,19 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Calificar Viaje'),
+        title: const Text('Calificar Viaje'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Información del viaje
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     Icon(
@@ -107,7 +107,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                       size: 60,
                       color: Colors.blue[700],
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       '¡Viaje Completado!',
                       style: TextStyle(
@@ -116,7 +116,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                         color: Colors.blue[700],
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       'Taxista: ${widget.taxistaNombre}',
                       style: TextStyle(
@@ -128,7 +128,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                 ),
               ),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
 
             // Calificación con estrellas
             Text(
@@ -140,7 +140,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Estrellas interactivas
             Center(
@@ -162,7 +162,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                 }),
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             // Texto de la calificación
             Center(
@@ -175,7 +175,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                 ),
               ),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
 
             // Campo de comentarios
             Text(
@@ -186,7 +186,7 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                 color: Colors.grey[800],
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             TextField(
               controller: _comentarioController,
               maxLines: 3,
@@ -199,13 +199,13 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                 fillColor: Colors.grey[50],
               ),
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
 
             // Botón para enviar calificación
             ElevatedButton.icon(
               onPressed: _isLoading ? null : _enviarCalificacion,
               icon: _isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -213,18 +213,18 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Icon(Icons.send),
+                  : const Icon(Icons.send),
               label: Text(_isLoading ? 'Enviando...' : 'Enviar Calificación'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[700],
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Botón para saltar calificación
             TextButton(

@@ -49,14 +49,17 @@ dependencies:
   # Firebase 
   firebase_core: ^2.15.0                
   firebase_database: ^10.2.4
+  google_mobile_ads: ^5.3.1
   
   # Location permissions
   # permission_handler: ^10.4.3
 
+  permission_handler: ^11.3.1
+  location: ^5.0.3
 dev_dependencies:
   flutter_test:
     sdk: flutter           
-
+ 
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

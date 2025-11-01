@@ -4,8 +4,10 @@ import 'package:nawii/views/pasajero/solicitar_viaje_simple_page.dart';
 import 'package:nawii/services/location_service_simple.dart';
 
 class SolicitarViajePage extends StatefulWidget {
+  const SolicitarViajePage({super.key});
+
   @override
-  _SolicitarViajePageState createState() => _SolicitarViajePageState();
+  State<SolicitarViajePage> createState() => _SolicitarViajePageState();
 }
 
 class _SolicitarViajePageState extends State<SolicitarViajePage> {
@@ -37,7 +39,7 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
         hasPermission = await LocationServiceSimple.requestLocationPermission();
         if (!hasPermission) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text(
                   'Se necesitan permisos de ubicación para usar esta función'),
               backgroundColor: Colors.red,
@@ -83,7 +85,7 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
   Future<void> _buscarDestino() async {
     if (_destinoController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Por favor ingresa un destino'),
           backgroundColor: Colors.orange,
         ),
@@ -105,7 +107,7 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => SolicitarViajeSimplePage(),
+          builder: (context) => const SolicitarViajeSimplePage(),
         ),
       );
     } catch (e) {
@@ -126,19 +128,19 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Solicitar Viaje'),
+        title: const Text('Solicitar Viaje'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Campo de origen
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -150,13 +152,13 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                         color: Colors.blue[700],
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _origenController,
                       decoration: InputDecoration(
                         hintText: 'Ubicación actual',
                         prefixIcon:
-                            Icon(Icons.my_location, color: Colors.green),
+                            const Icon(Icons.my_location, color: Colors.green),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -165,22 +167,22 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                       ),
                       readOnly: true,
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     TextButton.icon(
                       onPressed: _obtenerUbicacionActual,
-                      icon: Icon(Icons.refresh, size: 16),
-                      label: Text('Actualizar ubicación'),
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Actualizar ubicación'),
                     ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Campo de destino
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -192,12 +194,12 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                         color: Colors.blue[700],
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: _destinoController,
                       decoration: InputDecoration(
                         hintText: 'Ingresa tu destino',
-                        prefixIcon: Icon(Icons.flag, color: Colors.red),
+                        prefixIcon: const Icon(Icons.flag, color: Colors.red),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -209,7 +211,7 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                 ),
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Botón para buscar taxistas
             ElevatedButton.icon(
@@ -217,7 +219,7 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                   ? null
                   : _buscarDestino,
               icon: _isLoading
-                  ? SizedBox(
+                  ? const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
@@ -225,32 +227,32 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Icon(Icons.search, size: 24),
+                  : const Icon(Icons.search, size: 24),
               label: Text(
                 _isLoading ? 'Buscando...' : 'Buscar Taxistas',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue[700],
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Información adicional
             if (_ubicacionActual != null)
               Card(
                 color: Colors.green[50],
                 child: Padding(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Icon(Icons.check_circle, color: Colors.green[700]),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Ubicación detectada correctamente',

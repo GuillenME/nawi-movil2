@@ -67,7 +67,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
   Future<void> _solicitarViaje() async {
     if (_taxistaSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Por favor selecciona un taxista'),
           backgroundColor: Colors.orange,
         ),
@@ -121,7 +121,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Seleccionar Taxista'),
+        title: const Text('Seleccionar Taxista'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
@@ -129,7 +129,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
         children: [
           // Información del viaje
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             color: Colors.grey[100],
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,28 +142,28 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                     color: Colors.blue[700],
                   ),
                 ),
-                SizedBox(height: 12),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.location_on, color: Colors.green, size: 20),
-                    SizedBox(width: 8),
+                    const Icon(Icons.location_on, color: Colors.green, size: 20),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         widget.direccionOrigen,
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.flag, color: Colors.red, size: 20),
-                    SizedBox(width: 8),
+                    const Icon(Icons.flag, color: Colors.red, size: 20),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         widget.direccionDestino,
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -184,7 +184,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                           size: 80,
                           color: Colors.grey[400],
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'No hay taxistas disponibles',
                           style: TextStyle(
@@ -192,7 +192,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                             color: Colors.grey[600],
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           'Intenta de nuevo en unos momentos',
                           style: TextStyle(
@@ -203,7 +203,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                     ),
                   )
                 : ListView.builder(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     itemCount: _taxisDisponibles.length,
                     itemBuilder: (context, index) {
                       final taxista = _taxisDisponibles[index];
@@ -211,7 +211,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                           _taxistaSeleccionado?['id'] == taxista['id'];
 
                       return Card(
-                        margin: EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 12),
                         elevation: isSelected ? 4 : 1,
                         color: isSelected ? Colors.blue[50] : Colors.white,
                         child: ListTile(
@@ -236,19 +236,19 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Disponible ahora'),
-                              SizedBox(height: 4),
+                              const Text('Disponible ahora'),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Icon(Icons.star,
+                                  const Icon(Icons.star,
                                       color: Colors.orange, size: 16),
-                                  SizedBox(width: 4),
-                                  Text('4.5 ⭐'),
-                                  SizedBox(width: 16),
+                                  const SizedBox(width: 4),
+                                  const Text('4.5 ⭐'),
+                                  const SizedBox(width: 16),
                                   Icon(Icons.access_time,
                                       color: Colors.grey[600], size: 16),
-                                  SizedBox(width: 4),
-                                  Text('2 min'),
+                                  const SizedBox(width: 4),
+                                  const Text('2 min'),
                                 ],
                               ),
                             ],
@@ -268,7 +268,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
           // Información del taxista seleccionado
           if (_taxistaSeleccionado != null)
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               color: Colors.blue[50],
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,17 +281,17 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                       color: Colors.blue[700],
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(Icons.person, color: Colors.blue[700]),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                           'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...'),
                     ],
                   ),
-                  SizedBox(height: 4),
-                  Row(
+                  const SizedBox(height: 4),
+                  const Row(
                     children: [
                       Icon(Icons.star, color: Colors.orange),
                       SizedBox(width: 8),
@@ -304,14 +304,14 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
 
           // Botones de acción
           Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: _isSolicitandoViaje ? null : _solicitarViaje,
                     icon: _isSolicitandoViaje
-                        ? SizedBox(
+                        ? const SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
@@ -320,17 +320,17 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                                   AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Icon(Icons.check),
+                        : const Icon(Icons.check),
                     label: Text(
                         _isSolicitandoViaje ? 'Solicitando...' : 'Solicitar'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green[700],
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
@@ -338,12 +338,12 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                         _taxistaSeleccionado = null;
                       });
                     },
-                    icon: Icon(Icons.close),
-                    label: Text('Cancelar'),
+                    icon: const Icon(Icons.close),
+                    label: const Text('Cancelar'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[700],
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                   ),
                 ),

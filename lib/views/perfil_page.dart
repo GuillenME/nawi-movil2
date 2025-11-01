@@ -4,6 +4,8 @@ import 'package:nawii/models/user_model.dart';
 import 'package:nawii/views/login_page.dart';
 
 class PerfilPage extends StatefulWidget {
+  const PerfilPage({super.key});
+
   @override
   _PerfilPageState createState() => _PerfilPageState();
 }
@@ -30,7 +32,7 @@ class _PerfilPageState extends State<PerfilPage> {
     await AuthService.logout();
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
+      MaterialPageRoute(builder: (context) => const LoginPage()),
       (route) => false,
     );
   }
@@ -38,41 +40,41 @@ class _PerfilPageState extends State<PerfilPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_currentUser == null) {
-      return LoginPage();
+      return const LoginPage();
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Mi Perfil'),
+        title: const Text('Mi Perfil'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.edit),
+            icon: const Icon(Icons.edit),
             onPressed: () {
               // TODO: Implementar edición de perfil
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Próximamente: Editar perfil')),
+                const SnackBar(content: Text('Próximamente: Editar perfil')),
               );
             },
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Información del usuario
             Card(
               child: Padding(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
                     CircleAvatar(
@@ -86,7 +88,7 @@ class _PerfilPageState extends State<PerfilPage> {
                         color: Colors.blue[700],
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       _currentUser!.nombreCompleto,
                       style: TextStyle(
@@ -95,7 +97,7 @@ class _PerfilPageState extends State<PerfilPage> {
                         color: Colors.blue[700],
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       _currentUser!.email,
                       style: TextStyle(
@@ -103,10 +105,10 @@ class _PerfilPageState extends State<PerfilPage> {
                         color: Colors.grey[600],
                       ),
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Container(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _currentUser!.isTaxista
                             ? Colors.orange[100]
@@ -127,12 +129,12 @@ class _PerfilPageState extends State<PerfilPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Información de contacto
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -144,18 +146,18 @@ class _PerfilPageState extends State<PerfilPage> {
                         color: Colors.blue[700],
                       ),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     if (_currentUser!.telefono != null) ...[
                       ListTile(
                         leading: Icon(Icons.phone, color: Colors.blue[700]),
-                        title: Text('Teléfono'),
+                        title: const Text('Teléfono'),
                         subtitle: Text(_currentUser!.telefono!),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ],
                     ListTile(
                       leading: Icon(Icons.email, color: Colors.blue[700]),
-                      title: Text('Correo'),
+                      title: const Text('Correo'),
                       subtitle: Text(_currentUser!.email),
                       contentPadding: EdgeInsets.zero,
                     ),
@@ -163,7 +165,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Estadísticas (diferentes según el rol)
             if (_currentUser!.isTaxista) ...[
@@ -172,7 +174,7 @@ class _PerfilPageState extends State<PerfilPage> {
               _buildPasajeroStats(),
             ],
 
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Opciones adicionales
             Card(
@@ -180,57 +182,57 @@ class _PerfilPageState extends State<PerfilPage> {
                 children: [
                   ListTile(
                     leading: Icon(Icons.history, color: Colors.blue[700]),
-                    title: Text('Historial de Viajes'),
-                    subtitle: Text('Ver todos mis viajes'),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                    title: const Text('Historial de Viajes'),
+                    subtitle: const Text('Ver todos mis viajes'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
                       // TODO: Implementar historial
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                             content: Text('Próximamente: Historial de viajes')),
                       );
                     },
                   ),
-                  Divider(),
+                  const Divider(),
                   ListTile(
                     leading: Icon(Icons.star, color: Colors.orange[700]),
-                    title: Text('Calificaciones'),
-                    subtitle: Text('Ver mis calificaciones'),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                    title: const Text('Calificaciones'),
+                    subtitle: const Text('Ver mis calificaciones'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
                       // TODO: Implementar calificaciones
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Calificaciones')),
+                        const SnackBar(content: Text('Próximamente: Calificaciones')),
                       );
                     },
                   ),
-                  Divider(),
+                  const Divider(),
                   ListTile(
                     leading: Icon(Icons.settings, color: Colors.grey[700]),
-                    title: Text('Configuración'),
-                    subtitle: Text('Ajustes de la aplicación'),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                    title: const Text('Configuración'),
+                    subtitle: const Text('Ajustes de la aplicación'),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
                       // TODO: Implementar configuración
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Configuración')),
+                        const SnackBar(content: Text('Próximamente: Configuración')),
                       );
                     },
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             // Botón de cerrar sesión
             ElevatedButton.icon(
               onPressed: _logout,
-              icon: Icon(Icons.logout),
-              label: Text('Cerrar Sesión'),
+              icon: const Icon(Icons.logout),
+              label: const Text('Cerrar Sesión'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[700],
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -245,7 +247,7 @@ class _PerfilPageState extends State<PerfilPage> {
   Widget _buildTaxistaStats() {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -257,7 +259,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 color: Colors.blue[700],
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -268,7 +270,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     Colors.green,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
                     'Calificación',
@@ -279,7 +281,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 ),
               ],
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -290,7 +292,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     Colors.green,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
                     'Horas Online',
@@ -310,7 +312,7 @@ class _PerfilPageState extends State<PerfilPage> {
   Widget _buildPasajeroStats() {
     return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -322,7 +324,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 color: Colors.blue[700],
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -333,7 +335,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     Colors.blue,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
                     'Calificación Promedio',
@@ -344,7 +346,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 ),
               ],
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -366,7 +368,7 @@ class _PerfilPageState extends State<PerfilPage> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -375,7 +377,7 @@ class _PerfilPageState extends State<PerfilPage> {
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
@@ -384,7 +386,7 @@ class _PerfilPageState extends State<PerfilPage> {
               color: color,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             title,
             style: TextStyle(

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.nawii">
     <!-- Permisos de ubicación -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -9,6 +10,11 @@
         android:label="nawii"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- Application ID de AdMob - Usar ID de prueba si el ID real no está configurado correctamente -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713"
+        />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -4,8 +4,10 @@ import 'package:nawii/views/taxista/viajes_pendientes_page.dart';
 import 'package:nawii/views/perfil_page.dart';
 
 class TaxistaHomePage extends StatefulWidget {
+  const TaxistaHomePage({super.key});
+
   @override
-  _TaxistaHomePageState createState() => _TaxistaHomePageState();
+  State<TaxistaHomePage> createState() => _TaxistaHomePageState();
 }
 
 class _TaxistaHomePageState extends State<TaxistaHomePage> {
@@ -23,7 +25,7 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
     // TODO: Implementar solicitud de permisos de ubicación
     // Por ahora solo mostramos un mensaje
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text(
             'Se solicitarán permisos de ubicación para funcionar como taxista'),
         duration: Duration(seconds: 3),
@@ -44,7 +46,7 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
           _isOnline = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Te has desconectado'),
             backgroundColor: Colors.orange,
           ),
@@ -56,7 +58,7 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
           _isOnline = true;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Te has conectado y estás disponible para viajes'),
             backgroundColor: Colors.green,
           ),
@@ -79,13 +81,13 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Estado de conexión
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: _isOnline ? Colors.green[50] : Colors.orange[50],
               borderRadius: BorderRadius.circular(16),
@@ -100,7 +102,7 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                   size: 60,
                   color: _isOnline ? Colors.green[700] : Colors.orange[700],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   _isOnline ? 'En línea' : 'Desconectado',
                   style: TextStyle(
@@ -109,7 +111,7 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                     color: _isOnline ? Colors.green[700] : Colors.orange[700],
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   _isOnline
                       ? 'Recibiendo solicitudes de viaje'
@@ -123,13 +125,13 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
               ],
             ),
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 30),
 
           // Botón principal para conectar/desconectar
           ElevatedButton.icon(
             onPressed: _isLoading ? null : _toggleOnlineStatus,
             icon: _isLoading
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
@@ -140,19 +142,19 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                 : Icon(_isOnline ? Icons.pause : Icons.play_arrow, size: 28),
             label: Text(
               _isOnline ? 'Desconectar' : 'Conectar',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor:
                   _isOnline ? Colors.orange[700] : Colors.green[700],
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Opciones adicionales
           Row(
@@ -162,31 +164,31 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                   child: ListTile(
                     leading:
                         Icon(Icons.directions_car, color: Colors.blue[700]),
-                    title: Text('Viajes Pendientes'),
-                    subtitle: Text('Ver solicitudes'),
+                    title: const Text('Viajes Pendientes'),
+                    subtitle: const Text('Ver solicitudes'),
                     onTap: _isOnline
                         ? () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => ViajesPendientesPage()),
+                                  builder: (context) => const ViajesPendientesPage()),
                             );
                           }
                         : null,
                   ),
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Card(
                   child: ListTile(
                     leading: Icon(Icons.history, color: Colors.blue[700]),
-                    title: Text('Historial'),
-                    subtitle: Text('Viajes completados'),
+                    title: const Text('Historial'),
+                    subtitle: const Text('Viajes completados'),
                     onTap: () {
                       // TODO: Implementar historial
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                             content: Text('Próximamente: Historial de viajes')),
                       );
                     },
@@ -195,7 +197,7 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
 
           Row(
             children: [
@@ -203,29 +205,29 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                 child: Card(
                   child: ListTile(
                     leading: Icon(Icons.star, color: Colors.orange[700]),
-                    title: Text('Calificaciones'),
-                    subtitle: Text('Ver mis calificaciones'),
+                    title: const Text('Calificaciones'),
+                    subtitle: const Text('Ver mis calificaciones'),
                     onTap: () {
                       // TODO: Implementar calificaciones
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Calificaciones')),
+                        const SnackBar(content: Text('Próximamente: Calificaciones')),
                       );
                     },
                   ),
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Card(
                   child: ListTile(
                     leading:
                         Icon(Icons.account_circle, color: Colors.purple[700]),
-                    title: Text('Perfil'),
-                    subtitle: Text('Mi información'),
+                    title: const Text('Perfil'),
+                    subtitle: const Text('Mi información'),
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => PerfilPage()),
+                        MaterialPageRoute(builder: (context) => const PerfilPage()),
                       );
                     },
                   ),

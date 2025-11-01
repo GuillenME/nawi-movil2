@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/models/user_model.dart';
 import 'package:nawii/views/login_page.dart';
@@ -6,8 +7,11 @@ import 'package:nawii/views/pasajero/solicitar_viaje_simple_page.dart';
 import 'package:nawii/views/taxista/taxista_home_page.dart';
 import 'package:nawii/views/perfil_page.dart';
 import 'package:nawii/views/mapa_page.dart';
+import 'package:nawii/banner_ad.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -32,16 +36,18 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _logout() async {
     await AuthService.logout();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
@@ -49,46 +55,61 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (_currentUser == null) {
-      return LoginPage();
+      return const LoginPage();
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Nawi'),
+        title: const Text('Nawi'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.person),
+            icon: const Icon(Icons.person),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => PerfilPage()),
+                MaterialPageRoute(builder: (context) => const PerfilPage()),
               );
             },
           ),
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: _logout,
           ),
         ],
       ),
-      body: _currentUser!.isTaxista ? TaxistaHomePage() : PasajeroHomePage(),
+      body: Column(
+        children: [
+          Expanded(
+            child: _currentUser!.isTaxista
+                ? const TaxistaHomePage()
+                : const PasajeroHomePage(),
+          ),
+          // Banner de anuncios en la parte inferior
+          const BannerAdWidget(
+            adSize: AdSize.banner,
+            adUnitId: 'ca-app-pub-1838002939487298/5731553456',
+          ),
+        ],
+      ),
     );
   }
 }
 
 class PasajeroHomePage extends StatelessWidget {
+  const PasajeroHomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Bienvenida
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.blue[50],
               borderRadius: BorderRadius.circular(16),
@@ -101,7 +122,7 @@ class PasajeroHomePage extends StatelessWidget {
                   size: 60,
                   color: Colors.blue[700],
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   '¡Bienvenido Pasajero!',
                   style: TextStyle(
@@ -110,7 +131,7 @@ class PasajeroHomePage extends StatelessWidget {
                     color: Colors.blue[700],
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'Solicita un viaje cuando lo necesites',
                   style: TextStyle(
@@ -122,7 +143,7 @@ class PasajeroHomePage extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 30),
 
           // Botón principal para solicitar viaje
           ElevatedButton.icon(
@@ -130,48 +151,48 @@ class PasajeroHomePage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => SolicitarViajeSimplePage()),
+                    builder: (context) => const SolicitarViajeSimplePage()),
               );
             },
-            icon: Icon(Icons.local_taxi, size: 28),
-            label: Text(
+            icon: const Icon(Icons.local_taxi, size: 28),
+            label: const Text(
               'Solicitar Viaje',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Botón del Mapa
           ElevatedButton.icon(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MapaPage()),
+                MaterialPageRoute(builder: (context) => const MapaPage()),
               );
             },
-            icon: Icon(Icons.map, size: 24),
-            label: Text(
+            icon: const Icon(Icons.map, size: 24),
+            label: const Text(
               'Ver Mapa',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green[700],
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
 
           // Opciones adicionales
           Row(
@@ -180,29 +201,30 @@ class PasajeroHomePage extends StatelessWidget {
                 child: Card(
                   child: ListTile(
                     leading: Icon(Icons.history, color: Colors.blue[700]),
-                    title: Text('Historial'),
-                    subtitle: Text('Ver viajes anteriores'),
+                    title: const Text('Historial'),
+                    subtitle: const Text('Ver viajes anteriores'),
                     onTap: () {
                       // TODO: Implementar historial
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                             content: Text('Próximamente: Historial de viajes')),
                       );
                     },
                   ),
                 ),
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Card(
                   child: ListTile(
                     leading: Icon(Icons.star, color: Colors.orange[700]),
-                    title: Text('Calificaciones'),
-                    subtitle: Text('Ver mis calificaciones'),
+                    title: const Text('Calificaciones'),
+                    subtitle: const Text('Ver mis calificaciones'),
                     onTap: () {
                       // TODO: Implementar calificaciones
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Calificaciones')),
+                        const SnackBar(
+                            content: Text('Próximamente: Calificaciones')),
                       );
                     },
                   ),

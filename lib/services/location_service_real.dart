@@ -1,34 +1,55 @@
-import 'package:geolocator/geolocator.dart';
+import 'dart:math' as math;
+import 'package:location/location.dart' as location_pkg;
 import 'package:permission_handler/permission_handler.dart';
 
 class LocationServiceReal {
+  static final location_pkg.Location _location = location_pkg.Location();
+
   // Verificar si los permisos de ubicación están concedidos
   static Future<bool> hasLocationPermission() async {
-    LocationPermission permission = await Geolocator.checkPermission();
-    return permission == LocationPermission.always ||
-        permission == LocationPermission.whileInUse;
+    try {
+      location_pkg.PermissionStatus permissionGranted =
+          await _location.hasPermission();
+      return permissionGranted == location_pkg.PermissionStatus.granted ||
+          permissionGranted == location_pkg.PermissionStatus.grantedLimited;
+    } catch (e) {
+      print('Error verificando permisos: $e');
+      return false;
+    }
   }
 
   // Solicitar permisos de ubicación
   static Future<bool> requestLocationPermission() async {
-    // Solicitar permisos usando permission_handler
-    PermissionStatus status = await Permission.location.request();
+    try {
+      // Solicitar permisos usando permission_handler
+      PermissionStatus status = await Permission.location.request();
 
-    if (status.isGranted) {
-      // Verificar si los servicios de ubicación están habilitados
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        // Solicitar al usuario que habilite los servicios de ubicación
-        return false;
+      if (status.isGranted || status.isLimited) {
+        // Verificar si los servicios de ubicación están habilitados
+        bool serviceEnabled = await _location.serviceEnabled();
+        if (!serviceEnabled) {
+          serviceEnabled = await _location.requestService();
+          if (!serviceEnabled) {
+            return false;
+          }
+        }
+        return true;
       }
-      return true;
+      return false;
+    } catch (e) {
+      print('Error solicitando permisos: $e');
+      return false;
     }
-    return false;
   }
 
   // Verificar si los servicios de ubicación están habilitados
   static Future<bool> isLocationServiceEnabled() async {
-    return await Geolocator.isLocationServiceEnabled();
+    try {
+      return await _location.serviceEnabled();
+    } catch (e) {
+      print('Error verificando servicios: $e');
+      return false;
+    }
   }
 
   // Obtener ubicación actual
@@ -49,15 +70,15 @@ class LocationServiceReal {
         throw Exception('Servicios de ubicación deshabilitados');
       }
 
+      // Habilitar servicio de ubicación en modo background si es necesario
+      await _location.enableBackgroundMode(enable: false);
+
       // Obtener ubicación actual
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: Duration(seconds: 10),
-      );
+      location_pkg.LocationData locationData = await _location.getLocation();
 
       return {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
+        'latitude': locationData.latitude ?? 16.867,
+        'longitude': locationData.longitude ?? -92.094,
       };
     } catch (e) {
       // En caso de error, devolver ubicación por defecto (Ocosingo)
@@ -70,8 +91,9 @@ class LocationServiceReal {
   }
 
   // Obtener ubicación con precisión específica
+  // Nota: El paquete location usa una API diferente, así que simulamos con alta precisión
   static Future<Map<String, double>> getCurrentLocationWithAccuracy(
-    LocationAccuracy accuracy,
+    dynamic accuracy, // Mantenemos el parámetro para compatibilidad
   ) async {
     try {
       bool hasPermission = await hasLocationPermission();
@@ -82,14 +104,19 @@ class LocationServiceReal {
         }
       }
 
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: accuracy,
-        timeLimit: Duration(seconds: 15),
+      // El paquete location no tiene control directo de precisión,
+      // pero intentamos obtener la mejor ubicación disponible
+      _location.changeSettings(
+        accuracy: location_pkg.LocationAccuracy.high,
+        interval: 1000,
+        distanceFilter: 0,
       );
 
+      location_pkg.LocationData locationData = await _location.getLocation();
+
       return {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
+        'latitude': locationData.latitude ?? 16.867,
+        'longitude': locationData.longitude ?? -92.094,
       };
     } catch (e) {
       print('Error obteniendo ubicación con precisión: $e');
@@ -107,13 +134,20 @@ class LocationServiceReal {
     double endLatitude,
     double endLongitude,
   ) {
-    return Geolocator.distanceBetween(
-          startLatitude,
-          startLongitude,
-          endLatitude,
-          endLongitude,
-        ) /
-        1000; // Convertir metros a kilómetros
+    const double earthRadius = 6371; // Radio de la Tierra en km
+
+    double dLat = _degreesToRadians(endLatitude - startLatitude);
+    double dLon = _degreesToRadians(endLongitude - startLongitude);
+
+    double a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_degreesToRadians(startLatitude)) *
+            math.cos(_degreesToRadians(endLatitude)) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    double c = 2 * math.asin(math.sqrt(a));
+
+    return earthRadius * c;
   }
 
   // Obtener distancia en metros
@@ -123,22 +157,24 @@ class LocationServiceReal {
     double endLatitude,
     double endLongitude,
   ) {
-    return Geolocator.distanceBetween(
-      startLatitude,
-      startLongitude,
-      endLatitude,
-      endLongitude,
-    );
+    return calculateDistance(
+          startLatitude,
+          startLongitude,
+          endLatitude,
+          endLongitude,
+        ) *
+        1000; // Convertir kilómetros a metros
   }
 
   // Escuchar cambios de ubicación
-  static Stream<Position> getLocationStream() {
-    return Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Actualizar cada 10 metros
-      ),
-    );
+  static Stream<Map<String, double>> getLocationStream() {
+    return _location.onLocationChanged
+        .map((location_pkg.LocationData locationData) {
+      return {
+        'latitude': locationData.latitude ?? 16.867,
+        'longitude': locationData.longitude ?? -92.094,
+      };
+    });
   }
 
   // Obtener dirección desde coordenadas (requiere API de geocodificación)
@@ -171,5 +207,10 @@ class LocationServiceReal {
       targetLongitude,
     );
     return distance <= radiusInKm;
+  }
+
+  // Método auxiliar para convertir grados a radianes
+  static double _degreesToRadians(double degrees) {
+    return degrees * (math.pi / 180);
   }
 }

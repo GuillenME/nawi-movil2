@@ -3,8 +3,10 @@ import 'package:nawii/models/viaje_model.dart';
 import 'package:nawii/services/taxista_service.dart';
 
 class ViajesPendientesPage extends StatefulWidget {
+  const ViajesPendientesPage({super.key});
+
   @override
-  _ViajesPendientesPageState createState() => _ViajesPendientesPageState();
+  State<ViajesPendientesPage> createState() => _ViajesPendientesPageState();
 }
 
 class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
@@ -104,18 +106,18 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Viajes Pendientes'),
+        title: const Text('Viajes Pendientes'),
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh),
             onPressed: _cargarViajesPendientes,
           ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _viajesPendientes.isEmpty
               ? Center(
                   child: Column(
@@ -126,7 +128,7 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                         size: 80,
                         color: Colors.grey[400],
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'No hay viajes pendientes',
                         style: TextStyle(
@@ -134,7 +136,7 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                           color: Colors.grey[600],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
                         'Los viajes aparecerán aquí cuando estés en línea',
                         style: TextStyle(
@@ -149,25 +151,25 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
               : RefreshIndicator(
                   onRefresh: _cargarViajesPendientes,
                   child: ListView.builder(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     itemCount: _viajesPendientes.length,
                     itemBuilder: (context, index) {
                       final viaje = _viajesPendientes[index];
                       return Card(
-                        margin: EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 16),
                         child: Padding(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.location_on, color: Colors.red),
-                                  SizedBox(width: 8),
+                                  const Icon(Icons.location_on, color: Colors.red),
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       viaje.direccionOrigen,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
                                       ),
@@ -175,25 +177,25 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 8),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
-                                  Icon(Icons.flag, color: Colors.green),
-                                  SizedBox(width: 8),
+                                  const Icon(Icons.flag, color: Colors.green),
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       viaje.direccionDestino,
-                                      style: TextStyle(fontSize: 14),
+                                      style: const TextStyle(fontSize: 14),
                                     ),
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
                                   Icon(Icons.access_time,
                                       size: 16, color: Colors.grey[600]),
-                                  SizedBox(width: 4),
+                                  const SizedBox(width: 4),
                                   Text(
                                     'Hace ${_calcularTiempo(viaje.fechaCreacion)}',
                                     style: TextStyle(
@@ -203,33 +205,33 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
                                   Expanded(
                                     child: ElevatedButton.icon(
                                       onPressed: () => _aceptarViaje(viaje),
-                                      icon: Icon(Icons.check, size: 18),
-                                      label: Text('Aceptar'),
+                                      icon: const Icon(Icons.check, size: 18),
+                                      label: const Text('Aceptar'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green[700],
                                         foregroundColor: Colors.white,
                                         padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                            const EdgeInsets.symmetric(vertical: 12),
                                       ),
                                     ),
                                   ),
-                                  SizedBox(width: 12),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: ElevatedButton.icon(
                                       onPressed: () => _rechazarViaje(viaje),
-                                      icon: Icon(Icons.close, size: 18),
-                                      label: Text('Rechazar'),
+                                      icon: const Icon(Icons.close, size: 18),
+                                      label: const Text('Rechazar'),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.red[700],
                                         foregroundColor: Colors.white,
                                         padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                            const EdgeInsets.symmetric(vertical: 12),
                                       ),
                                     ),
                                   ),
