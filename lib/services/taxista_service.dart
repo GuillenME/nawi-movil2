@@ -266,16 +266,31 @@ class TaxistaService {
       final user = await AuthService.getCurrentUser();
       if (user == null) throw Exception('Usuario no autenticado');
 
+      // Obtener el token directamente desde SharedPreferences
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Token no encontrado. Por favor inicia sesión nuevamente.',
+        };
+      }
+
+      final token = tokenRaw.trim();
+      print('🔐 Completando viaje con token: ${token.length} caracteres');
+
       final response = await http.post(
         Uri.parse('$baseUrl/taxista/completar-viaje/$viajeId'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${user.token}',
+          'Authorization': 'Bearer $token',
         },
       );
 
-      if (response.statusCode == 200) {
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           // Actualizar en Firebase
@@ -293,11 +308,24 @@ class TaxistaService {
             'message': data['message'] ?? 'Error al completar viaje',
           };
         }
-      } else {
+      } else if (response.statusCode == 401) {
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
         };
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error de conexión: ${response.statusCode}',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
       }
     } catch (e) {
       return {

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/models/user_model.dart';
 import 'package:nawii/views/login_page.dart';
+import 'package:nawii/views/historial_viajes_page.dart';
+import 'package:nawii/views/editar_perfil_page.dart';
 
 class PerfilPage extends StatefulWidget {
   @override
@@ -53,15 +55,23 @@ class _PerfilPageState extends State<PerfilPage> {
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: () {
-              // TODO: Implementar edición de perfil
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Próximamente: Editar perfil')),
-              );
-            },
-          ),
+          // Solo mostrar botón de editar para pasajeros
+          if (!_currentUser!.isTaxista)
+            IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditarPerfilPage(),
+                  ),
+                );
+                // Si se actualizó el perfil, recargar los datos
+                if (result == true) {
+                  _loadUser();
+                }
+              },
+            ),
         ],
       ),
       body: SingleChildScrollView(
@@ -184,10 +194,11 @@ class _PerfilPageState extends State<PerfilPage> {
                     subtitle: Text('Ver todos mis viajes'),
                     trailing: Icon(Icons.arrow_forward_ios, size: 16),
                     onTap: () {
-                      // TODO: Implementar historial
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Próximamente: Historial de viajes')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HistorialViajesPage(),
+                        ),
                       );
                     },
                   ),
