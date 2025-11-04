@@ -45,8 +45,8 @@ class _SolicitarViajeSimplePageState extends State<SolicitarViajeSimplePage> {
         }
       }
 
-      // Obtener ubicación simulada
-      Map<String, double> position = LocationServiceSimple.getCurrentLocation();
+      // Obtener ubicación real
+      Map<String, double> position = await LocationServiceSimple.getCurrentLocation();
       _origenController.text =
           'Ubicación actual (${position['latitude']!.toStringAsFixed(4)}, ${position['longitude']!.toStringAsFixed(4)})';
     } catch (e) {

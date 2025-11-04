@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace "com.example.nawii"
-    compileSdk 34
+    compileSdk 35
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
@@ -20,8 +20,13 @@ android {
 
     defaultConfig {
         applicationId "com.example.nawii"
+<<<<<<< HEAD
         minSdkVersion flutter.minSdkVersion
         targetSdk 34
+=======
+        minSdk 21
+        targetSdk 35
+>>>>>>> f7562747b780356730af6747e654266630b4e8f6
         versionCode 1
         versionName "1.0"
     }

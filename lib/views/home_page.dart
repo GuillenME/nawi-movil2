@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/models/user_model.dart';
 import 'package:nawii/views/login_page.dart';
-import 'package:nawii/views/pasajero/solicitar_viaje_simple_page.dart';
+import 'package:nawii/views/pasajero/solicitar_viaje_con_mapa_page.dart';
 import 'package:nawii/views/taxista/taxista_home_page.dart';
 import 'package:nawii/views/perfil_page.dart';
 
@@ -129,7 +129,7 @@ class PasajeroHomePage extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => SolicitarViajeSimplePage()),
+                    builder: (context) => SolicitarViajeConMapaPage()),
               );
             },
             icon: Icon(Icons.local_taxi, size: 28),

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 buildscript {
     ext.kotlin_version = "1.9.22"
     repositories {
@@ -11,6 +12,8 @@ buildscript {
     }
 }
 
+=======
+>>>>>>> f7562747b780356730af6747e654266630b4e8f6
 allprojects {
     repositories {
         google()
@@ -22,10 +25,14 @@ rootProject.buildDir = "../build"
 
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-
-subprojects {
-    project.evaluationDependsOn(":app")
+    
+    project.afterEvaluate {
+        if (project.hasProperty('android')) {
+            project.android {
+                compileSdkVersion 35
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {

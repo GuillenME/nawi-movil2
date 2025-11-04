@@ -7,7 +7,7 @@ import 'package:nawii/services/location_service_simple.dart';
 
 class TaxistaService {
   final DatabaseReference database = FirebaseDatabase.instance.ref();
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Conectar taxista (poner en línea)
   Future<void> conectar() async {
@@ -37,7 +37,7 @@ class TaxistaService {
 
   // Actualizar ubicación del taxista
   Future<void> actualizarUbicacion(String userId) async {
-    Map<String, double> pos = LocationServiceSimple.getCurrentLocation();
+    Map<String, double> pos = await LocationServiceSimple.getCurrentLocation();
 
     await database.child('taxis/$userId').set({
       'latitude': pos['latitude']!,
