@@ -50,6 +50,8 @@ class UserModel {
   }
 
   String get nombreCompleto => '$nombre $apellido';
-  bool get isTaxista => tipo == 'taxista' || rolId == '3';
-  bool get isPasajero => tipo == 'pasajero' || rolId == '2';
+  bool get isTaxista =>
+      tipo == 'taxista' || rolId == '00000000-0000-0000-0000-000000000003';
+  bool get isPasajero =>
+      tipo == 'pasajero' || rolId == '00000000-0000-0000-0000-000000000002';
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/views/taxista/viajes_pendientes_page.dart';
 import 'package:nawii/views/perfil_page.dart';
+import 'package:nawii/views/historial_viajes_page.dart';
 
 class TaxistaHomePage extends StatefulWidget {
   @override
@@ -184,10 +185,11 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                     title: Text('Historial'),
                     subtitle: Text('Viajes completados'),
                     onTap: () {
-                      // TODO: Implementar historial
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Próximamente: Historial de viajes')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HistorialViajesPage(),
+                        ),
                       );
                     },
                   ),

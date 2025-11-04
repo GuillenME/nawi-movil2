@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/utils/validators.dart';
+import 'package:nawii/utils/app_colors.dart';
+import 'package:nawii/widgets/nawi_logo.dart';
 import 'package:nawii/views/register_page.dart';
+import 'package:nawii/views/forgot_password_page.dart';
 import 'package:nawii/views/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -47,7 +51,7 @@ class _LoginPageState extends State<LoginPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
     }
@@ -56,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.all(24.0),
@@ -65,31 +69,14 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: 60),
-                // Logo o título
-                Icon(
-                  Icons.local_taxi,
-                  size: 80,
-                  color: Colors.blue[700],
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Nawi',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                SizedBox(height: 40),
+                // Logo de NAWI
+                Center(
+                  child: NawiLogo(
+                    size: 100,
+                    showText: true,
+                    showTagline: true,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Tu transporte de confianza',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 40),
 
@@ -97,24 +84,27 @@ class _LoginPageState extends State<LoginPage> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.email),
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon: Icon(Icons.email, color: AppColors.primaryYellow),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu correo';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un correo válido';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validateEmail,
                 ),
                 SizedBox(height: 16),
 
@@ -122,14 +112,17 @@ class _LoginPageState extends State<LoginPage> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
-                    prefixIcon: Icon(Icons.lock),
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon: Icon(Icons.lock, color: AppColors.primaryYellow),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.mediumGrey,
                       ),
                       onPressed: () {
                         setState(() {
@@ -139,35 +132,59 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validatePassword,
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 16),
+
+                // Enlace de olvidé mi contraseña
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgotPasswordPage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      '¿Olvidaste tu contraseña?',
+                      style: TextStyle(
+                        color: AppColors.primaryYellow,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
 
                 // Botón de login
                 ElevatedButton(
                   onPressed: _isLoading ? null : _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primaryYellow,
+                    foregroundColor: AppColors.primaryDark,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: AppColors.primaryDark)
                       : Text(
                           'Iniciar Sesión',
                           style: TextStyle(
@@ -180,7 +197,10 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('¿No tienes cuenta? '),
+                    Text(
+                      '¿No tienes cuenta? ',
+                      style: TextStyle(color: AppColors.mediumGrey),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -192,7 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Text(
                         'Regístrate aquí',
                         style: TextStyle(
-                          color: Colors.blue[700],
+                          color: AppColors.primaryYellow,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

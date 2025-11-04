@@ -7,7 +7,7 @@ import 'package:nawii/services/location_service_simple.dart';
 
 class TaxistaService {
   final DatabaseReference database = FirebaseDatabase.instance.ref();
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Conectar taxista (poner en línea)
   Future<void> conectar() async {
@@ -37,7 +37,7 @@ class TaxistaService {
 
   // Actualizar ubicación del taxista
   Future<void> actualizarUbicacion(String userId) async {
-    Map<String, double> pos = LocationServiceSimple.getCurrentLocation();
+    Map<String, double> pos = await LocationServiceSimple.getCurrentLocation();
 
     await database.child('taxis/$userId').set({
       'latitude': pos['latitude']!,
@@ -115,16 +115,31 @@ class TaxistaService {
       final user = await AuthService.getCurrentUser();
       if (user == null) throw Exception('Usuario no autenticado');
 
+      // Obtener el token directamente desde SharedPreferences
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Token no encontrado. Por favor inicia sesión nuevamente.',
+        };
+      }
+
+      final token = tokenRaw.trim();
+      print('🔐 Aceptando viaje con token: ${token.length} caracteres');
+
       final response = await http.post(
         Uri.parse('$baseUrl/taxista/aceptar-viaje/$viajeId'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${user.token}',
+          'Authorization': 'Bearer $token',
         },
       );
 
-      if (response.statusCode == 200) {
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           // Actualizar en Firebase
@@ -143,11 +158,24 @@ class TaxistaService {
             'message': data['message'] ?? 'Error al aceptar viaje',
           };
         }
-      } else {
+      } else if (response.statusCode == 401) {
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
         };
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error de conexión: ${response.statusCode}',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
       }
     } catch (e) {
       return {
@@ -163,16 +191,31 @@ class TaxistaService {
       final user = await AuthService.getCurrentUser();
       if (user == null) throw Exception('Usuario no autenticado');
 
+      // Obtener el token directamente desde SharedPreferences
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Token no encontrado. Por favor inicia sesión nuevamente.',
+        };
+      }
+
+      final token = tokenRaw.trim();
+      print('🔐 Rechazando viaje con token: ${token.length} caracteres');
+
       final response = await http.post(
         Uri.parse('$baseUrl/taxista/rechazar-viaje/$viajeId'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${user.token}',
+          'Authorization': 'Bearer $token',
         },
       );
 
-      if (response.statusCode == 200) {
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           // Actualizar en Firebase
@@ -190,11 +233,24 @@ class TaxistaService {
             'message': data['message'] ?? 'Error al rechazar viaje',
           };
         }
-      } else {
+      } else if (response.statusCode == 401) {
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
         };
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error de conexión: ${response.statusCode}',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
       }
     } catch (e) {
       return {
@@ -210,16 +266,31 @@ class TaxistaService {
       final user = await AuthService.getCurrentUser();
       if (user == null) throw Exception('Usuario no autenticado');
 
+      // Obtener el token directamente desde SharedPreferences
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Token no encontrado. Por favor inicia sesión nuevamente.',
+        };
+      }
+
+      final token = tokenRaw.trim();
+      print('🔐 Completando viaje con token: ${token.length} caracteres');
+
       final response = await http.post(
         Uri.parse('$baseUrl/taxista/completar-viaje/$viajeId'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${user.token}',
+          'Authorization': 'Bearer $token',
         },
       );
 
-      if (response.statusCode == 200) {
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           // Actualizar en Firebase
@@ -237,11 +308,24 @@ class TaxistaService {
             'message': data['message'] ?? 'Error al completar viaje',
           };
         }
-      } else {
+      } else if (response.statusCode == 401) {
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
         };
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error de conexión: ${response.statusCode}',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
       }
     } catch (e) {
       return {

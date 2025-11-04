@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/utils/validators.dart';
+import 'package:nawii/utils/app_colors.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -36,7 +38,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Las contraseñas no coinciden'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
       return;
@@ -62,7 +64,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.successColor,
         ),
       );
       Navigator.pop(context); // Volver al login
@@ -70,7 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
     }
@@ -79,11 +81,11 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Registro'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -95,106 +97,18 @@ class _RegisterPageState extends State<RegisterPage> {
               children: [
                 SizedBox(height: 20),
 
-                // Campo de nombre
-                TextFormField(
-                  controller: _nombreController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu nombre';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
-                // Campo de apellido
-                TextFormField(
-                  controller: _apellidoController,
-                  decoration: InputDecoration(
-                    labelText: 'Apellido',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu apellido';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
-                // Campo de email
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu correo';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un correo válido';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
-                // Campo de teléfono
-                TextFormField(
-                  controller: _telefonoController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Teléfono',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu teléfono';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-
                 // Información de tipo de usuario
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: AppColors.primaryDark.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[200]!),
+                    border: Border.all(
+                        color: AppColors.primaryYellow.withOpacity(0.5)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.person, color: Colors.blue[700]),
+                      Icon(Icons.person, color: AppColors.primaryYellow),
                       SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -205,14 +119,14 @@ class _RegisterPageState extends State<RegisterPage> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
+                                color: AppColors.primaryYellow,
                               ),
                             ),
                             Text(
                               'Podrás solicitar viajes cuando lo necesites',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.blue[600],
+                                color: AppColors.mediumGrey,
                               ),
                             ),
                           ],
@@ -223,18 +137,142 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 SizedBox(height: 16),
 
+                // Campo de nombre
+                TextFormField(
+                  controller: _nombreController,
+                  style: TextStyle(color: AppColors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Nombre',
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon:
+                        Icon(Icons.person, color: AppColors.primaryYellow),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
+                  ),
+                  validator: (value) =>
+                      Validators.validateRequired(value, 'tu nombre'),
+                ),
+                SizedBox(height: 16),
+
+                // Campo de apellido
+                TextFormField(
+                  controller: _apellidoController,
+                  style: TextStyle(color: AppColors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Apellido',
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon: Icon(Icons.person_outline,
+                        color: AppColors.primaryYellow),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
+                  ),
+                  validator: (value) =>
+                      Validators.validateRequired(value, 'tu apellido'),
+                ),
+                SizedBox(height: 16),
+
+                // Campo de email
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: AppColors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Correo electrónico',
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon:
+                        Icon(Icons.email, color: AppColors.primaryYellow),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
+                  ),
+                  validator: Validators.validateEmail,
+                ),
+                SizedBox(height: 16),
+
+                // Campo de teléfono
+                TextFormField(
+                  controller: _telefonoController,
+                  keyboardType: TextInputType.phone,
+                  style: TextStyle(color: AppColors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Teléfono',
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon:
+                        Icon(Icons.phone, color: AppColors.primaryYellow),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
+                    ),
+                    filled: true,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
+                  ),
+                  validator: Validators.validatePhone,
+                ),
+                SizedBox(height: 16),
+
                 // Campo de contraseña
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
-                    prefixIcon: Icon(Icons.lock),
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon:
+                        Icon(Icons.lock, color: AppColors.primaryYellow),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.mediumGrey,
                       ),
                       onPressed: () {
                         setState(() {
@@ -244,19 +282,21 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa una contraseña';
-                    }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validatePassword,
                 ),
                 SizedBox(height: 16),
 
@@ -264,14 +304,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Confirmar contraseña',
-                    prefixIcon: Icon(Icons.lock_outline),
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon: Icon(Icons.lock_outline,
+                        color: AppColors.primaryYellow),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.mediumGrey,
                       ),
                       onPressed: () {
                         setState(() {
@@ -281,16 +325,24 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor confirma tu contraseña';
-                    }
-                    return null;
-                  },
+                  validator: (value) => Validators.validateConfirmPassword(
+                    value,
+                    _passwordController.text,
+                  ),
                 ),
                 SizedBox(height: 24),
 
@@ -298,15 +350,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primaryYellow,
+                    foregroundColor: AppColors.primaryDark,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: AppColors.primaryDark)
                       : Text(
                           'Registrarse',
                           style: TextStyle(
@@ -319,7 +371,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('¿Ya tienes cuenta? '),
+                    Text(
+                      '¿Ya tienes cuenta? ',
+                      style: TextStyle(color: AppColors.mediumGrey),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
@@ -327,7 +382,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: Text(
                         'Inicia sesión aquí',
                         style: TextStyle(
-                          color: Colors.blue[700],
+                          color: AppColors.primaryYellow,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

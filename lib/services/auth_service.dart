@@ -4,16 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Método para login
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
     try {
+      print('🔐 Intentando login con email: $email');
+      print('🌐 URL: $baseUrl/login');
+
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           'email': email,
@@ -21,38 +25,126 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          // Guardar datos del usuario en SharedPreferences
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-              'user_data', jsonEncode(data['data']['usuario']));
-          await prefs.setString('token', data['data']['access_token']);
-          await prefs.setString('tipo', data['data']['tipo']);
-          await prefs.setBool('is_logged_in', true);
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
 
-          return {
-            'success': true,
-            'user': UserModel.fromJson(data['data']['usuario']),
-            'token': data['data']['access_token'],
-          };
-        } else {
+      if (response.statusCode == 200) {
+        try {
+          final data = jsonDecode(response.body);
+          if (data['success'] == true) {
+            // Guardar datos del usuario en SharedPreferences
+            final prefs = await SharedPreferences.getInstance();
+            // Agregar el tipo al objeto usuario antes de guardar
+            final userDataToSave =
+                Map<String, dynamic>.from(data['data']['usuario']);
+            if (data['data']['tipo'] != null) {
+              userDataToSave['tipo'] = data['data']['tipo'];
+            }
+            await prefs.setString('user_data', jsonEncode(userDataToSave));
+
+            // Verificar que el token existe en la respuesta
+            final accessToken = data['data']['access_token'];
+            if (accessToken == null || accessToken.isEmpty) {
+              print(
+                  '⚠️  ADVERTENCIA: access_token está vacío o no existe en la respuesta');
+              print('   Respuesta completa: ${jsonEncode(data)}');
+            } else {
+              print('✅ Token recibido: ${accessToken.length} caracteres');
+              print(
+                  '✅ Token (primeros 30): ${accessToken.substring(0, accessToken.length > 30 ? 30 : accessToken.length)}...');
+            }
+
+            await prefs.setString('token', accessToken ?? '');
+            await prefs.setString('tipo', data['data']['tipo'] ?? '');
+            await prefs.setBool('is_logged_in', true);
+
+            // Verificar que se guardó correctamente
+            final tokenGuardado = prefs.getString('token');
+            print(
+                '✅ Token guardado en SharedPreferences: ${tokenGuardado != null && tokenGuardado.isNotEmpty ? 'SÍ' : 'NO'}');
+            if (tokenGuardado != null) {
+              print('   Longitud del token guardado: ${tokenGuardado.length}');
+            }
+
+            // Verificar que el ID del usuario sea correcto
+            // Agregar el tipo al objeto usuario antes de crear el UserModel
+            final usuarioData =
+                Map<String, dynamic>.from(data['data']['usuario']);
+            if (data['data']['tipo'] != null) {
+              usuarioData['tipo'] = data['data']['tipo'];
+            }
+            final usuario = UserModel.fromJson(usuarioData);
+            print('✅ Login exitoso');
+            print('👤 Usuario ID recibido del backend: ${usuario.id}');
+            print('👤 Usuario Rol ID: ${usuario.rolId}');
+            print('👤 Usuario Tipo: ${usuario.tipo}');
+
+            // Verificar que el ID no sea un placeholder
+            if (usuario.id == '00000000-0000-0000-0000-000000000002' ||
+                usuario.id == '00000000-0000-0000-0000-000000000003') {
+              print(
+                  '⚠️  ADVERTENCIA: El backend está retornando un ID de rol como ID de usuario');
+              print(
+                  '   El backend debe retornar el ID real del usuario, no el ID del rol');
+              print('   ID recibido: ${usuario.id}');
+              print('   Esto causará errores al crear viajes');
+            }
+
+            return {
+              'success': true,
+              'user': usuario,
+              'token': data['data']['access_token'],
+            };
+          } else {
+            print('❌ Login fallido: ${data['message']}');
+            return {
+              'success': false,
+              'message': data['message'] ?? 'Error en el login',
+            };
+          }
+        } catch (e) {
+          print('❌ Error parseando respuesta: $e');
+          print('📦 Respuesta recibida: ${response.body}');
           return {
             'success': false,
-            'message': data['message'] ?? 'Error en el login',
+            'message': 'Error al procesar respuesta del servidor: $e',
           };
         }
-      } else {
+      } else if (response.statusCode == 500) {
+        // Error 500 - Error interno del servidor
+        String errorMessage = 'Error interno del servidor (500)';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage =
+              errorData['message'] ?? errorData['error'] ?? errorMessage;
+          print('❌ Error 500: $errorMessage');
+        } catch (e) {
+          print('❌ No se pudo parsear el error 500: ${response.body}');
+        }
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'message': errorMessage,
+        };
+      } else {
+        print('❌ Error HTTP ${response.statusCode}');
+        String errorMessage = 'Error de conexión: ${response.statusCode}';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage =
+              errorData['message'] ?? errorData['error'] ?? errorMessage;
+        } catch (e) {
+          // Si no se puede parsear, usar el mensaje por defecto
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
         };
       }
     } catch (e) {
+      print('❌ Excepción en login: $e');
       return {
         'success': false,
-        'message': 'Error: $e',
+        'message': 'Error de conexión: $e',
       };
     }
   }
@@ -142,5 +234,152 @@ class AuthService {
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
+  }
+
+  // Método para solicitar recuperación de contraseña
+  static Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      print('🔐 Solicitando recuperación de contraseña para: $email');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/password/forgot'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email.trim(),
+        }),
+      );
+
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return {
+            'success': true,
+            'message': data['message'] ??
+                'Se ha enviado un correo con las instrucciones para restablecer tu contraseña',
+          };
+        } else {
+          return {
+            'success': false,
+            'message': data['message'] ??
+                'Error al solicitar recuperación de contraseña',
+          };
+        }
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ??
+                'Error al solicitar recuperación de contraseña',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      print('❌ Excepción en forgotPassword: $e');
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
+  }
+
+  // Método para restablecer contraseña
+  static Future<Map<String, dynamic>> resetPassword({
+    required String email,
+    required String token,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      print('🔐 Restableciendo contraseña para: $email');
+
+      // Validar que las contraseñas coincidan
+      if (password != passwordConfirmation) {
+        return {
+          'success': false,
+          'message': 'Las contraseñas no coinciden',
+        };
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/password/reset'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email.trim(),
+          'token': token.trim(),
+          'password': password,
+          'password_confirmation': passwordConfirmation,
+        }),
+      );
+
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return {
+            'success': true,
+            'message':
+                data['message'] ?? 'Contraseña restablecida exitosamente',
+          };
+        } else {
+          return {
+            'success': false,
+            'message': data['message'] ?? 'Error al restablecer contraseña',
+          };
+        }
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          String errorMessage =
+              errorData['message'] ?? 'Error al restablecer contraseña';
+
+          // Si hay errores de validación específicos
+          if (errorData['errors'] != null) {
+            final errors = errorData['errors'] as Map<String, dynamic>;
+            final errorMessages = <String>[];
+            errors.forEach((key, value) {
+              if (value is List) {
+                errorMessages.addAll(value.map((e) => e.toString()));
+              }
+            });
+            if (errorMessages.isNotEmpty) {
+              errorMessage = errorMessages.join(', ');
+            }
+          }
+
+          return {
+            'success': false,
+            'message': errorMessage,
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
+      }
+    } catch (e) {
+      print('❌ Excepción en resetPassword: $e');
+      return {
+        'success': false,
+        'message': 'Error de conexión: $e',
+      };
+    }
   }
 }
