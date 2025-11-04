@@ -1,45 +1,76 @@
-// Importar math para las funciones trigonométricas
+import 'package:location/location.dart';
 import 'dart:math' as math;
 
-// Servicio de ubicación simplificado sin dependencias externas
-// Este archivo está comentado porque las dependencias están deshabilitadas en pubspec.yaml
-
+// Servicio de ubicación usando el plugin location (más ligero que geolocator)
 class LocationService {
+  static final Location _location = Location();
+
   // Verificar si los permisos de ubicación están concedidos
   static Future<bool> hasLocationPermission() async {
-    // Simular verificación de permisos
-    return true;
+    bool serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      return false;
+    }
+
+    PermissionStatus permissionStatus = await _location.hasPermission();
+    return permissionStatus == PermissionStatus.granted;
   }
 
   // Solicitar permisos de ubicación
   static Future<bool> requestLocationPermission() async {
-    // Simular solicitud de permisos
+    bool serviceEnabled = await _location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await _location.requestService();
+      if (!serviceEnabled) {
+        return false;
+      }
+    }
+
+    PermissionStatus permissionStatus = await _location.hasPermission();
+    if (permissionStatus == PermissionStatus.denied) {
+      permissionStatus = await _location.requestPermission();
+      if (permissionStatus != PermissionStatus.granted) {
+        return false;
+      }
+    }
+
     return true;
   }
 
   // Verificar si los servicios de ubicación están habilitados
   static Future<bool> isLocationServiceEnabled() async {
-    // Simular verificación de servicios
-    return true;
+    return await _location.serviceEnabled();
   }
 
   // Obtener ubicación actual
   static Future<Map<String, double>> getCurrentLocation() async {
-    // Simular ubicación (Ocosingo, Chiapas)
-    return {
-      'latitude': 16.867,
-      'longitude': -92.094,
-    };
+    try {
+      LocationData locationData = await _location.getLocation();
+      return {
+        'latitude': locationData.latitude ?? 16.867,
+        'longitude': locationData.longitude ?? -92.094,
+      };
+    } catch (e) {
+      // Si hay error, retornar ubicación por defecto (Ocosingo)
+      return {
+        'latitude': 16.867,
+        'longitude': -92.094,
+      };
+    }
   }
 
-  // Calcular distancia entre dos puntos
+  // Obtener stream de ubicación en tiempo real
+  static Stream<LocationData> getLocationStream() {
+    return _location.onLocationChanged;
+  }
+
+  // Calcular distancia entre dos puntos (fórmula de Haversine)
   static double calculateDistance(
     double startLatitude,
     double startLongitude,
     double endLatitude,
     double endLongitude,
   ) {
-    // Fórmula de Haversine simplificada
     const double earthRadius = 6371; // Radio de la Tierra en km
 
     double dLat = _degreesToRadians(endLatitude - startLatitude);

@@ -40,8 +40,8 @@ class _MapaPageState extends State<MapaPage> {
         }
       }
 
-      // Obtener ubicación simulada
-      Map<String, double> position = LocationServiceSimple.getCurrentLocation();
+      // Obtener ubicación real
+      Map<String, double> position = await LocationServiceSimple.getCurrentLocation();
       setState(() {
         _userLocation = position;
         _isLoading = false;

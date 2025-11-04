@@ -47,8 +47,8 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
         }
       }
 
-      // Obtener ubicación simulada
-      Map<String, double> position = LocationServiceSimple.getCurrentLocation();
+      // Obtener ubicación real
+      Map<String, double> position = await LocationServiceSimple.getCurrentLocation();
 
       setState(() {
         _ubicacionActual = position;

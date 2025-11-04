@@ -4,16 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  static const String baseUrl = 'https://nawi-2.me/api';
+  static const String baseUrl = 'https://nawi.click/api';
 
   // Método para login
   static Future<Map<String, dynamic>> login(
       String email, String password) async {
     try {
+      print('🔐 Intentando login con email: $email');
+      print('🌐 URL: $baseUrl/login');
+      
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           'email': email,
@@ -21,38 +25,93 @@ class AuthService {
         }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true) {
-          // Guardar datos del usuario en SharedPreferences
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(
-              'user_data', jsonEncode(data['data']['usuario']));
-          await prefs.setString('token', data['data']['access_token']);
-          await prefs.setString('tipo', data['data']['tipo']);
-          await prefs.setBool('is_logged_in', true);
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
 
-          return {
-            'success': true,
-            'user': UserModel.fromJson(data['data']['usuario']),
-            'token': data['data']['access_token'],
-          };
-        } else {
+      if (response.statusCode == 200) {
+        try {
+          final data = jsonDecode(response.body);
+          if (data['success'] == true) {
+            // Guardar datos del usuario en SharedPreferences
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(
+                'user_data', jsonEncode(data['data']['usuario']));
+            
+            // Verificar que el token existe en la respuesta
+            final accessToken = data['data']['access_token'];
+            if (accessToken == null || accessToken.isEmpty) {
+              print('⚠️  ADVERTENCIA: access_token está vacío o no existe en la respuesta');
+              print('   Respuesta completa: ${jsonEncode(data)}');
+            } else {
+              print('✅ Token recibido: ${accessToken.length} caracteres');
+              print('✅ Token (primeros 30): ${accessToken.substring(0, accessToken.length > 30 ? 30 : accessToken.length)}...');
+            }
+            
+            await prefs.setString('token', accessToken ?? '');
+            await prefs.setString('tipo', data['data']['tipo'] ?? '');
+            await prefs.setBool('is_logged_in', true);
+            
+            // Verificar que se guardó correctamente
+            final tokenGuardado = prefs.getString('token');
+            print('✅ Token guardado en SharedPreferences: ${tokenGuardado != null && tokenGuardado.isNotEmpty ? 'SÍ' : 'NO'}');
+            if (tokenGuardado != null) {
+              print('   Longitud del token guardado: ${tokenGuardado.length}');
+            }
+
+            print('✅ Login exitoso');
+            return {
+              'success': true,
+              'user': UserModel.fromJson(data['data']['usuario']),
+              'token': data['data']['access_token'],
+            };
+          } else {
+            print('❌ Login fallido: ${data['message']}');
+            return {
+              'success': false,
+              'message': data['message'] ?? 'Error en el login',
+            };
+          }
+        } catch (e) {
+          print('❌ Error parseando respuesta: $e');
+          print('📦 Respuesta recibida: ${response.body}');
           return {
             'success': false,
-            'message': data['message'] ?? 'Error en el login',
+            'message': 'Error al procesar respuesta del servidor: $e',
           };
         }
-      } else {
+      } else if (response.statusCode == 500) {
+        // Error 500 - Error interno del servidor
+        String errorMessage = 'Error interno del servidor (500)';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+          print('❌ Error 500: $errorMessage');
+        } catch (e) {
+          print('❌ No se pudo parsear el error 500: ${response.body}');
+        }
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'message': errorMessage,
+        };
+      } else {
+        print('❌ Error HTTP ${response.statusCode}');
+        String errorMessage = 'Error de conexión: ${response.statusCode}';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+        } catch (e) {
+          // Si no se puede parsear, usar el mensaje por defecto
+        }
+        return {
+          'success': false,
+          'message': errorMessage,
         };
       }
     } catch (e) {
+      print('❌ Excepción en login: $e');
       return {
         'success': false,
-        'message': 'Error: $e',
+        'message': 'Error de conexión: $e',
       };
     }
   }

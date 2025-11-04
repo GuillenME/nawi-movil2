@@ -9,6 +9,14 @@
         android:label="nawii"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        
+        <!-- Google Maps API Key - DEBE estar al nivel de <application> -->
+        <!-- ⚠️ REEMPLAZA el valor con tu API Key real de Google Maps -->
+        <!-- Obtén tu API Key en: https://console.cloud.google.com/ -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU" />
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,9 +33,6 @@
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme" />
-            <meta-data
-              android:name="com.google.android.geo.API_KEY"
-              android:value="AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
