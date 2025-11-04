@@ -73,14 +73,9 @@ class PasajeroService {
       }
 
       // Preparar el body del request
-      // IMPORTANTE: Prueba primero SIN enviar id_pasajero (el backend lo obtiene del token)
-      // Si da error, entonces el backend necesita id_pasajero en el body
+      // IMPORTANTE: El backend obtiene id_pasajero del token JWT (más seguro)
       final requestBody = <String, dynamic>{
-        // OPCIÓN 1: Backend obtiene id_pasajero del token (RECOMENDADO - más seguro)
-        // NO enviar 'id_pasajero' aquí - el backend usa Auth::user()->id
-
-        // OPCIÓN 2: Si el backend requiere id_pasajero en el body, descomenta esto:
-        'id_pasajero': user.id, // ← ACTIVADO: El backend puede requerir esto
+        // NO enviar id_pasajero - el backend lo obtiene del token JWT
 
         'salida': {
           'lat': salidaLat,
@@ -93,8 +88,10 @@ class PasajeroService {
       };
 
       print('📝 Configuración del request:');
-      print(
-          '   id_pasajero en body: ${requestBody.containsKey('id_pasajero') ? 'SÍ (${user.id})' : 'NO (backend lo obtiene del token)'}');
+      print('   id_pasajero en body: NO (backend lo obtiene del token JWT)');
+      print('   👤 Usuario ID desde Flutter: ${user.id}');
+      print('   👤 Usuario Rol ID: ${user.rolId}');
+      print('   👤 Usuario Tipo: ${user.tipo}');
 
       // Agregar id_taxista solo si existe y es válido
       // IMPORTANTE: El ID del taxista debe corresponder con el ID en la base de datos MySQL
@@ -107,19 +104,24 @@ class PasajeroService {
         // Por ahora lo enviamos tal cual, pero el backend debe validarlo
         requestBody['id_taxista'] = taxistaIdLimpio;
 
+        print('🚕 Taxista ID (desde Firebase): $taxistaIdLimpio');
         print(
-            '⚠️  VERIFICAR: El ID del taxista debe existir en la tabla "users" de MySQL');
-        print('   ID enviado: $taxistaIdLimpio');
+            '⚠️  VERIFICAR: Este ID debe existir en la tabla "users" de MySQL');
         print(
-            '   Nota: Si este ID viene de Firebase (key del nodo), puede que no coincida con el ID real en MySQL');
+            '   Si el error persiste, verifica que el taxista se guardó en Firebase usando su ID real de MySQL');
       }
 
       print('📤 Enviando datos:');
-      print('   id_pasajero: ${user.id} (tipo: ${user.id.runtimeType})');
+      print('   id_pasajero: [obtenido del token JWT por el backend]');
       print('   salida: lat=$salidaLat, lon=$salidaLon');
       print('   destino: lat=$destinoLat, lon=$destinoLon');
-      if (idTaxista != null)
-        print('   id_taxista: $idTaxista (tipo: ${idTaxista.runtimeType})');
+      if (idTaxista != null) {
+        print('   id_taxista: $idTaxista');
+        print(
+            '   ⚠️  VERIFICAR: Este ID debe existir en la tabla "users" de MySQL');
+        print(
+            '   ID esperado para Froilan: 208e049f-8ea7-47da-903e-a55917287af5');
+      }
 
       final bodyJson = jsonEncode(requestBody);
       print('📦 Body JSON: $bodyJson');
@@ -389,11 +391,21 @@ class PasajeroService {
   Future<void> _guardarViajeEnFirebase(
       Map<String, dynamic> viajeData, String? idTaxista) async {
     try {
+      // ✅ IMPORTANTE: En Firebase guardamos el ID del usuario del taxista (no el ID de la tabla taxistas)
+      // porque es lo que se usa para comparar en viajes_pendientes_page.dart
+      // El idTaxista que viene de Flutter es el ID del usuario (208e049f-8ea7-47da-903e-a55917287af5)
+      // El viajeData['id_taxista'] del backend es el ID de la tabla taxistas (41a005cc-3f5e-45e8-b73e-a9532acb2f0a)
       await database.child('viajes/${viajeData['id']}').set({
         'id_pasajero': viajeData['id_pasajero'],
-        'id_taxista': viajeData['id_taxista'] ?? idTaxista,
-        'salida': viajeData['salida'],
-        'destino': viajeData['destino'],
+        'id_taxista': idTaxista ?? viajeData['id_taxista'], // ✅ Priorizar ID del usuario (para Firebase)
+        'salida': viajeData['salida'] ?? {
+          'lat': viajeData['latitud_origen'],
+          'lon': viajeData['longitud_origen'],
+        },
+        'destino': viajeData['destino'] ?? {
+          'lat': viajeData['latitud_destino'],
+          'lon': viajeData['longitud_destino'],
+        },
         'estado': 'solicitado',
         'timestamp': DateTime.now().millisecondsSinceEpoch,
         'activo': true,

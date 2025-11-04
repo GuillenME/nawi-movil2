@@ -34,8 +34,13 @@ class AuthService {
           if (data['success'] == true) {
             // Guardar datos del usuario en SharedPreferences
             final prefs = await SharedPreferences.getInstance();
-            await prefs.setString(
-                'user_data', jsonEncode(data['data']['usuario']));
+            // Agregar el tipo al objeto usuario antes de guardar
+            final userDataToSave =
+                Map<String, dynamic>.from(data['data']['usuario']);
+            if (data['data']['tipo'] != null) {
+              userDataToSave['tipo'] = data['data']['tipo'];
+            }
+            await prefs.setString('user_data', jsonEncode(userDataToSave));
 
             // Verificar que el token existe en la respuesta
             final accessToken = data['data']['access_token'];
@@ -61,10 +66,33 @@ class AuthService {
               print('   Longitud del token guardado: ${tokenGuardado.length}');
             }
 
+            // Verificar que el ID del usuario sea correcto
+            // Agregar el tipo al objeto usuario antes de crear el UserModel
+            final usuarioData =
+                Map<String, dynamic>.from(data['data']['usuario']);
+            if (data['data']['tipo'] != null) {
+              usuarioData['tipo'] = data['data']['tipo'];
+            }
+            final usuario = UserModel.fromJson(usuarioData);
             print('✅ Login exitoso');
+            print('👤 Usuario ID recibido del backend: ${usuario.id}');
+            print('👤 Usuario Rol ID: ${usuario.rolId}');
+            print('👤 Usuario Tipo: ${usuario.tipo}');
+
+            // Verificar que el ID no sea un placeholder
+            if (usuario.id == '00000000-0000-0000-0000-000000000002' ||
+                usuario.id == '00000000-0000-0000-0000-000000000003') {
+              print(
+                  '⚠️  ADVERTENCIA: El backend está retornando un ID de rol como ID de usuario');
+              print(
+                  '   El backend debe retornar el ID real del usuario, no el ID del rol');
+              print('   ID recibido: ${usuario.id}');
+              print('   Esto causará errores al crear viajes');
+            }
+
             return {
               'success': true,
-              'user': UserModel.fromJson(data['data']['usuario']),
+              'user': usuario,
               'token': data['data']['access_token'],
             };
           } else {

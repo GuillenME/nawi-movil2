@@ -4,6 +4,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/models/viaje_model.dart';
 import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/views/taxista/viaje_en_curso_page.dart';
 
 class ViajesPendientesPage extends StatefulWidget {
   @override
@@ -47,31 +48,53 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
           // Buscar viajes dirigidos a este taxista con estado 'solicitado'
           final nuevosViajes = <ViajeModel>[];
           
+          print('🔍 Escuchando viajes en Firebase. Taxista ID: $_taxistaId');
+          print('📦 Total de viajes en Firebase: ${data.length}');
+          
           data.forEach((viajeId, viajeData) {
             if (viajeData is Map) {
               final estado = viajeData['estado'] as String?;
               final idTaxista = viajeData['id_taxista'] as String?;
               
+              print('   Viaje $viajeId: estado=$estado, id_taxista=$idTaxista');
+              
               // Si el viaje está dirigido a este taxista y está en estado 'solicitado'
               if (estado == 'solicitado' && idTaxista == _taxistaId) {
+                print('   ✅ Viaje $viajeId coincide con este taxista');
                 try {
                   // Convertir datos de Firebase a ViajeModel
                   final viaje = _convertirFirebaseAViaje(viajeId.toString(), viajeData);
                   if (viaje != null) {
                     nuevosViajes.add(viaje);
+                    print('   ✅ Viaje agregado a la lista');
                   }
                 } catch (e) {
-                  print('Error convirtiendo viaje: $e');
+                  print('   ❌ Error convirtiendo viaje: $e');
                 }
+              } else {
+                print('   ⚠️  Viaje $viajeId no coincide: estado=$estado (esperado: solicitado), id_taxista=$idTaxista (esperado: $_taxistaId)');
               }
             }
           });
 
+          print('📊 Total de viajes pendientes: ${nuevosViajes.length}');
           setState(() {
             _viajesPendientes = nuevosViajes;
             _isLoading = false;
           });
+        } else {
+          print('⚠️  No hay datos en Firebase');
+          setState(() {
+            _viajesPendientes = [];
+            _isLoading = false;
+          });
         }
+      } else {
+        print('⚠️  No hay taxista ID o no hay datos en Firebase');
+        setState(() {
+          _viajesPendientes = [];
+          _isLoading = false;
+        });
       }
     });
   }
@@ -112,21 +135,21 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
     });
 
     try {
-      final viajes = await _taxistaService.obtenerViajesDisponibles();
+      // ✅ NO usar obtenerViajesDisponibles() porque ese endpoint solo devuelve viajes SIN taxista
+      // Si el viaje ya tiene un taxista asignado, debe aparecer desde Firebase
+      // El listener de Firebase ya está manejando los viajes asignados a este taxista
+      
+      // Solo cargar viajes disponibles si no hay taxista asignado (opcional)
+      // Por ahora, confiamos en el listener de Firebase que ya está funcionando
+      
       setState(() {
-        _viajesPendientes = viajes;
         _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al cargar viajes: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      print('Error al cargar viajes: $e');
     }
   }
 
@@ -140,7 +163,21 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
             backgroundColor: Colors.green,
           ),
         );
-        _cargarViajesPendientes();
+        
+        // Navegar a la página de viaje en curso
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TaxistaViajeEnCursoPage(
+              viajeId: viaje.id,
+              origenLat: viaje.latitudOrigen,
+              origenLon: viaje.longitudOrigen,
+              destinoLat: viaje.latitudDestino,
+              destinoLon: viaje.longitudDestino,
+              pasajeroId: viaje.pasajeroId.toString(),
+            ),
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
