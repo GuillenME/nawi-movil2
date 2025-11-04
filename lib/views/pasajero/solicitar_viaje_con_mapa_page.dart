@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/models/viaje_model.dart';
+import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/pasajero/viaje_en_curso_page.dart';
 
 class SolicitarViajeConMapaPage extends StatefulWidget {
@@ -56,7 +57,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Se necesitan permisos de ubicación'),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.errorColor,
             ),
           );
           setState(() => _isLoading = false);
@@ -76,7 +77,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al obtener ubicación: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
     }
@@ -223,9 +224,9 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.blue[700],
+                  backgroundColor: AppColors.primaryDark,
                   radius: 30,
-                  child: Icon(Icons.local_taxi, color: Colors.white, size: 30),
+                  child: Icon(Icons.local_taxi, color: AppColors.primaryYellow, size: 30),
                 ),
                 SizedBox(width: 16),
                 Expanded(
@@ -242,13 +243,13 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                       SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.star, color: Colors.orange, size: 16),
+                          Icon(Icons.star, color: AppColors.primaryYellow, size: 16),
                           SizedBox(width: 4),
-                          Text('4.5 ⭐'),
+                          Text('4.5 ⭐', style: TextStyle(color: AppColors.white)),
                           SizedBox(width: 16),
-                          Icon(Icons.location_on, color: Colors.grey[600], size: 16),
+                          Icon(Icons.location_on, color: AppColors.mediumGrey, size: 16),
                           SizedBox(width: 4),
-                          Text('${distancia.toStringAsFixed(1)} km'),
+                          Text('${distancia.toStringAsFixed(1)} km', style: TextStyle(color: AppColors.white)),
                         ],
                       ),
                     ],
@@ -267,8 +268,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                     icon: Icon(Icons.close),
                     label: Text('Cerrar'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[300],
-                      foregroundColor: Colors.black87,
+                      backgroundColor: AppColors.mediumGrey,
+                      foregroundColor: AppColors.white,
                     ),
                   ),
                 ),
@@ -285,7 +286,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Por favor ingresa un destino'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.primaryYellow,
         ),
       );
       return;
@@ -321,7 +322,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Destino confirmado: ${_destinoController.text}'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.successColor,
           duration: Duration(seconds: 2),
         ),
       );
@@ -330,7 +331,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: No se pudo encontrar la ubicación. Intenta con una dirección más específica.'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
           duration: Duration(seconds: 4),
         ),
       );
@@ -342,7 +343,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Por favor confirma el destino primero'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.primaryYellow,
         ),
       );
       return;
@@ -352,7 +353,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Por favor selecciona un taxista del mapa'),
-          backgroundColor: Colors.orange,
+          backgroundColor: AppColors.primaryYellow,
         ),
       );
       return;
@@ -375,7 +376,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Solicitud enviada. Esperando respuesta del taxista...'),
-            backgroundColor: Colors.blue[700],
+            backgroundColor: AppColors.primaryDark,
             duration: Duration(seconds: 3),
           ),
         );
@@ -386,7 +387,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Error al solicitar viaje'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.errorColor,
           ),
         );
         setState(() => _isSolicitandoViaje = false);
@@ -395,7 +396,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al solicitar viaje: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
       setState(() => _isSolicitandoViaje = false);
@@ -428,7 +429,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('El taxista rechazó el viaje. Selecciona otro taxista.'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.primaryYellow,
             ),
           );
           setState(() {
@@ -444,10 +445,11 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Solicitar Viaje'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -456,20 +458,31 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                 // Campo de destino
                 Container(
                   padding: EdgeInsets.all(16),
-                  color: Colors.white,
+                  color: AppColors.primaryDark.withOpacity(0.5),
                   child: Row(
                     children: [
                       Expanded(
                         child: TextField(
                           controller: _destinoController,
+                          style: TextStyle(color: AppColors.white),
                           decoration: InputDecoration(
                             hintText: 'Ingresa tu destino',
-                            prefixIcon: Icon(Icons.flag, color: Colors.red),
+                            hintStyle: TextStyle(color: AppColors.mediumGrey),
+                            prefixIcon: Icon(Icons.flag, color: AppColors.errorColor),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: AppColors.mediumGrey),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: AppColors.mediumGrey),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                             ),
                             filled: true,
-                            fillColor: Colors.grey[50],
+                            fillColor: AppColors.primaryDark.withOpacity(0.7),
                           ),
                         ),
                       ),
@@ -479,8 +492,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                         icon: Icon(Icons.check),
                         label: Text('Confirmar'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700],
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.primaryYellow,
+                          foregroundColor: AppColors.primaryDark,
                         ),
                       ),
                     ],
@@ -515,7 +528,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                           top: 16,
                           left: 16,
                           right: 16,
-                          child: Card(
+                            child: Card(
+                            color: AppColors.primaryDark.withOpacity(0.9),
                             elevation: 4,
                             child: Padding(
                               padding: EdgeInsets.all(12),
@@ -525,12 +539,12 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.location_on, color: Colors.green, size: 20),
+                                      Icon(Icons.location_on, color: AppColors.successColor, size: 20),
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'Origen confirmado',
-                                          style: TextStyle(fontSize: 12),
+                                          style: TextStyle(fontSize: 12, color: AppColors.white),
                                         ),
                                       ),
                                     ],
@@ -538,14 +552,14 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                   SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      Icon(Icons.flag, color: Colors.red, size: 20),
+                                      Icon(Icons.flag, color: AppColors.errorColor, size: 20),
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _destinoController.text.isNotEmpty
                                               ? _destinoController.text
                                               : 'Destino confirmado',
-                                          style: TextStyle(fontSize: 12),
+                                          style: TextStyle(fontSize: 12, color: AppColors.white),
                                         ),
                                       ),
                                     ],
@@ -562,7 +576,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                 // Panel inferior con información y botones
                 Container(
                   padding: EdgeInsets.all(16),
-                  color: Colors.white,
+                  color: AppColors.primaryDark.withOpacity(0.5),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -571,13 +585,13 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                           padding: EdgeInsets.all(12),
                           margin: EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: Colors.green[50],
+                            color: AppColors.successColor.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green[300]!),
+                            border: Border.all(color: AppColors.successColor),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green[700]),
+                              Icon(Icons.check_circle, color: AppColors.successColor),
                               SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -587,12 +601,12 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                       'Taxista seleccionado',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.green[700],
+                                        color: AppColors.successColor,
                                       ),
                                     ),
                                     Text(
                                       'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
-                                      style: TextStyle(fontSize: 12),
+                                      style: TextStyle(fontSize: 12, color: AppColors.mediumGrey),
                                     ),
                                   ],
                                 ),
@@ -610,7 +624,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                               SizedBox(height: 12),
                               Text(
                                 'Esperando respuesta del taxista...',
-                                style: TextStyle(color: Colors.blue[700]),
+                                style: TextStyle(color: AppColors.primaryYellow),
                               ),
                             ],
                           ),
@@ -624,8 +638,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[700],
-                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.primaryYellow,
+                            foregroundColor: AppColors.primaryDark,
                             padding: EdgeInsets.symmetric(vertical: 16),
                             minimumSize: Size(double.infinity, 50),
                             shape: RoundedRectangleBorder(

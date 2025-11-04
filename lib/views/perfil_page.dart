@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/models/user_model.dart';
+import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/login_page.dart';
 import 'package:nawii/views/historial_viajes_page.dart';
 import 'package:nawii/views/editar_perfil_page.dart';
@@ -50,10 +51,11 @@ class _PerfilPageState extends State<PerfilPage> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Mi Perfil'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
         actions: [
           // Solo mostrar botón de editar para pasajeros
           if (!_currentUser!.isTaxista)
@@ -81,19 +83,20 @@ class _PerfilPageState extends State<PerfilPage> {
           children: [
             // Información del usuario
             Card(
+              color: AppColors.primaryDark.withOpacity(0.3),
               child: Padding(
                 padding: EdgeInsets.all(20),
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundColor: Colors.blue[100],
+                      backgroundColor: AppColors.primaryDark.withOpacity(0.5),
                       child: Icon(
                         _currentUser!.isTaxista
                             ? Icons.directions_car
                             : Icons.person,
                         size: 50,
-                        color: Colors.blue[700],
+                        color: AppColors.primaryYellow,
                       ),
                     ),
                     SizedBox(height: 16),
@@ -102,7 +105,7 @@ class _PerfilPageState extends State<PerfilPage> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
+                        color: AppColors.primaryYellow,
                       ),
                     ),
                     SizedBox(height: 8),
@@ -110,7 +113,7 @@ class _PerfilPageState extends State<PerfilPage> {
                       _currentUser!.email,
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[600],
+                        color: AppColors.mediumGrey,
                       ),
                     ),
                     SizedBox(height: 8),
@@ -119,16 +122,21 @@ class _PerfilPageState extends State<PerfilPage> {
                           EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _currentUser!.isTaxista
-                            ? Colors.orange[100]
-                            : Colors.green[100],
+                            ? AppColors.primaryYellow.withOpacity(0.2)
+                            : AppColors.successColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: _currentUser!.isTaxista
+                              ? AppColors.primaryYellow
+                              : AppColors.successColor,
+                        ),
                       ),
                       child: Text(
                         _currentUser!.isTaxista ? 'Taxista' : 'Pasajero',
                         style: TextStyle(
                           color: _currentUser!.isTaxista
-                              ? Colors.orange[700]
-                              : Colors.green[700],
+                              ? AppColors.primaryYellow
+                              : AppColors.successColor,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -141,6 +149,7 @@ class _PerfilPageState extends State<PerfilPage> {
 
             // Información de contacto
             Card(
+              color: AppColors.primaryDark.withOpacity(0.3),
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Column(
@@ -151,22 +160,22 @@ class _PerfilPageState extends State<PerfilPage> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[700],
+                        color: AppColors.primaryYellow,
                       ),
                     ),
                     SizedBox(height: 16),
                     if (_currentUser!.telefono != null) ...[
                       ListTile(
-                        leading: Icon(Icons.phone, color: Colors.blue[700]),
-                        title: Text('Teléfono'),
-                        subtitle: Text(_currentUser!.telefono!),
+                        leading: Icon(Icons.phone, color: AppColors.primaryYellow),
+                        title: Text('Teléfono', style: TextStyle(color: AppColors.white)),
+                        subtitle: Text(_currentUser!.telefono!, style: TextStyle(color: AppColors.mediumGrey)),
                         contentPadding: EdgeInsets.zero,
                       ),
                     ],
                     ListTile(
-                      leading: Icon(Icons.email, color: Colors.blue[700]),
-                      title: Text('Correo'),
-                      subtitle: Text(_currentUser!.email),
+                      leading: Icon(Icons.email, color: AppColors.primaryYellow),
+                      title: Text('Correo', style: TextStyle(color: AppColors.white)),
+                      subtitle: Text(_currentUser!.email, style: TextStyle(color: AppColors.mediumGrey)),
                       contentPadding: EdgeInsets.zero,
                     ),
                   ],
@@ -186,13 +195,14 @@ class _PerfilPageState extends State<PerfilPage> {
 
             // Opciones adicionales
             Card(
+              color: AppColors.primaryDark.withOpacity(0.3),
               child: Column(
                 children: [
                   ListTile(
-                    leading: Icon(Icons.history, color: Colors.blue[700]),
-                    title: Text('Historial de Viajes'),
-                    subtitle: Text('Ver todos mis viajes'),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                    leading: Icon(Icons.history, color: AppColors.primaryYellow),
+                    title: Text('Historial de Viajes', style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ver todos mis viajes', style: TextStyle(color: AppColors.mediumGrey)),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mediumGrey),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -202,12 +212,12 @@ class _PerfilPageState extends State<PerfilPage> {
                       );
                     },
                   ),
-                  Divider(),
+                  Divider(color: AppColors.mediumGrey.withOpacity(0.3)),
                   ListTile(
-                    leading: Icon(Icons.star, color: Colors.orange[700]),
-                    title: Text('Calificaciones'),
-                    subtitle: Text('Ver mis calificaciones'),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                    leading: Icon(Icons.star, color: AppColors.primaryYellow),
+                    title: Text('Calificaciones', style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ver mis calificaciones', style: TextStyle(color: AppColors.mediumGrey)),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mediumGrey),
                     onTap: () {
                       // TODO: Implementar calificaciones
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -215,12 +225,12 @@ class _PerfilPageState extends State<PerfilPage> {
                       );
                     },
                   ),
-                  Divider(),
+                  Divider(color: AppColors.mediumGrey.withOpacity(0.3)),
                   ListTile(
-                    leading: Icon(Icons.settings, color: Colors.grey[700]),
-                    title: Text('Configuración'),
-                    subtitle: Text('Ajustes de la aplicación'),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                    leading: Icon(Icons.settings, color: AppColors.mediumGrey),
+                    title: Text('Configuración', style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ajustes de la aplicación', style: TextStyle(color: AppColors.mediumGrey)),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mediumGrey),
                     onTap: () {
                       // TODO: Implementar configuración
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -239,8 +249,8 @@ class _PerfilPageState extends State<PerfilPage> {
               icon: Icon(Icons.logout),
               label: Text('Cerrar Sesión'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[700],
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.errorColor,
+                foregroundColor: AppColors.white,
                 padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -255,6 +265,7 @@ class _PerfilPageState extends State<PerfilPage> {
 
   Widget _buildTaxistaStats() {
     return Card(
+      color: AppColors.primaryDark.withOpacity(0.3),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -265,7 +276,7 @@ class _PerfilPageState extends State<PerfilPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[700],
+                color: AppColors.primaryYellow,
               ),
             ),
             SizedBox(height: 16),
@@ -276,7 +287,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Viajes Completados',
                     '0',
                     Icons.directions_car,
-                    Colors.green,
+                    AppColors.successColor,
                   ),
                 ),
                 SizedBox(width: 12),
@@ -285,7 +296,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Calificación',
                     '4.5',
                     Icons.star,
-                    Colors.orange,
+                    AppColors.primaryYellow,
                   ),
                 ),
               ],
@@ -298,7 +309,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Ganancias',
                     '\$0',
                     Icons.attach_money,
-                    Colors.green,
+                    AppColors.successColor,
                   ),
                 ),
                 SizedBox(width: 12),
@@ -307,7 +318,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Horas Online',
                     '0h',
                     Icons.access_time,
-                    Colors.blue,
+                    AppColors.primaryDark,
                   ),
                 ),
               ],
@@ -320,6 +331,7 @@ class _PerfilPageState extends State<PerfilPage> {
 
   Widget _buildPasajeroStats() {
     return Card(
+      color: AppColors.primaryDark.withOpacity(0.3),
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -330,7 +342,7 @@ class _PerfilPageState extends State<PerfilPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[700],
+                color: AppColors.primaryYellow,
               ),
             ),
             SizedBox(height: 16),
@@ -341,7 +353,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Viajes Realizados',
                     '0',
                     Icons.directions_car,
-                    Colors.blue,
+                    AppColors.primaryDark,
                   ),
                 ),
                 SizedBox(width: 12),
@@ -350,7 +362,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Calificación Promedio',
                     '4.5',
                     Icons.star,
-                    Colors.orange,
+                    AppColors.primaryYellow,
                   ),
                 ),
               ],
@@ -363,7 +375,7 @@ class _PerfilPageState extends State<PerfilPage> {
                     'Total Gastado',
                     '\$0',
                     Icons.attach_money,
-                    Colors.green,
+                    AppColors.successColor,
                   ),
                 ),
               ],
@@ -400,7 +412,7 @@ class _PerfilPageState extends State<PerfilPage> {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: AppColors.mediumGrey,
             ),
             textAlign: TextAlign.center,
           ),

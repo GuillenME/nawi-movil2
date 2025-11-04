@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/utils/validators.dart';
+import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/reset_password_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -41,7 +42,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.successColor,
           duration: Duration(seconds: 4),
         ),
       );
@@ -49,7 +50,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
     }
@@ -58,11 +59,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Recuperar Contraseña'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -78,7 +79,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 Icon(
                   Icons.lock_reset,
                   size: 80,
-                  color: Colors.blue[700],
+                  color: AppColors.primaryYellow,
                 ),
                 SizedBox(height: 20),
                 
@@ -88,7 +89,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                    color: AppColors.primaryYellow,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -101,7 +102,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       : 'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: AppColors.mediumGrey,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -113,14 +114,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     enabled: !_isLoading,
+                    style: TextStyle(color: AppColors.white),
                     decoration: InputDecoration(
                       labelText: 'Correo electrónico',
-                      prefixIcon: Icon(Icons.email),
+                      labelStyle: TextStyle(color: AppColors.mediumGrey),
+                      prefixIcon: Icon(Icons.email, color: AppColors.primaryYellow),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.mediumGrey),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.mediumGrey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                       ),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: AppColors.primaryDark.withOpacity(0.5),
                     ),
                     validator: Validators.validateEmail,
                   ),
@@ -130,15 +142,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ElevatedButton(
                     onPressed: _isLoading ? null : _sendResetEmail,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primaryYellow,
+                      foregroundColor: AppColors.primaryDark,
                       padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: _isLoading
-                        ? CircularProgressIndicator(color: Colors.white)
+                        ? CircularProgressIndicator(color: AppColors.primaryDark)
                         : Text(
                             'Enviar enlace de recuperación',
                             style: TextStyle(
@@ -152,15 +164,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   Container(
                     padding: EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.green[50],
+                      color: AppColors.successColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green[300]!),
+                      border: Border.all(color: AppColors.successColor),
                     ),
                     child: Column(
                       children: [
                         Icon(
                           Icons.check_circle,
-                          color: Colors.green,
+                          color: AppColors.successColor,
                           size: 48,
                         ),
                         SizedBox(height: 12),
@@ -169,7 +181,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.green[700],
+                            color: AppColors.successColor,
                           ),
                         ),
                         SizedBox(height: 8),
@@ -177,7 +189,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           'Revisa tu bandeja de entrada y sigue las instrucciones para restablecer tu contraseña.',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.green[700],
+                            color: AppColors.mediumGrey,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -199,8 +211,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[700],
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primaryYellow,
+                      foregroundColor: AppColors.primaryDark,
                       padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -226,7 +238,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   child: Text(
                     'Volver al inicio de sesión',
                     style: TextStyle(
-                      color: Colors.blue[700],
+                      color: AppColors.primaryYellow,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

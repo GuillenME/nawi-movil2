@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/models/user_model.dart';
+import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/login_page.dart';
 import 'package:nawii/views/pasajero/solicitar_viaje_con_mapa_page.dart';
 import 'package:nawii/views/taxista/taxista_home_page.dart';
@@ -53,10 +54,11 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text('Nawi'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        title: Text('NAWI'),
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
         actions: [
           IconButton(
             icon: Icon(Icons.person),
@@ -82,6 +84,7 @@ class PasajeroHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      color: Colors.black,
       padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -90,16 +93,16 @@ class PasajeroHomePage extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
+              color: AppColors.primaryDark.withOpacity(0.3),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.blue[200]!),
+              border: Border.all(color: AppColors.primaryYellow.withOpacity(0.5)),
             ),
             child: Column(
               children: [
                 Icon(
                   Icons.person,
                   size: 60,
-                  color: Colors.blue[700],
+                  color: AppColors.primaryYellow,
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -107,7 +110,7 @@ class PasajeroHomePage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                    color: AppColors.primaryYellow,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -115,7 +118,7 @@ class PasajeroHomePage extends StatelessWidget {
                   'Solicita un viaje cuando lo necesites',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: AppColors.mediumGrey,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -139,8 +142,8 @@ class PasajeroHomePage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.primaryYellow,
+              foregroundColor: AppColors.primaryDark,
               padding: EdgeInsets.symmetric(vertical: 20, horizontal: 30),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -154,10 +157,11 @@ class PasajeroHomePage extends StatelessWidget {
             children: [
               Expanded(
                 child: Card(
+                  color: AppColors.primaryDark.withOpacity(0.3),
                   child: ListTile(
-                    leading: Icon(Icons.history, color: Colors.blue[700]),
-                    title: Text('Historial'),
-                    subtitle: Text('Ver viajes anteriores'),
+                    leading: Icon(Icons.history, color: AppColors.primaryYellow),
+                    title: Text('Historial', style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ver viajes anteriores', style: TextStyle(color: AppColors.mediumGrey)),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -172,10 +176,11 @@ class PasajeroHomePage extends StatelessWidget {
               SizedBox(width: 10),
               Expanded(
                 child: Card(
+                  color: AppColors.primaryDark.withOpacity(0.3),
                   child: ListTile(
-                    leading: Icon(Icons.star, color: Colors.orange[700]),
-                    title: Text('Calificaciones'),
-                    subtitle: Text('Ver mis calificaciones'),
+                    leading: Icon(Icons.star, color: AppColors.primaryYellow),
+                    title: Text('Calificaciones', style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ver mis calificaciones', style: TextStyle(color: AppColors.mediumGrey)),
                     onTap: () {
                       // TODO: Implementar calificaciones
                       ScaffoldMessenger.of(context).showSnackBar(

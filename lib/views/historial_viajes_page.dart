@@ -3,6 +3,7 @@ import 'package:nawii/models/viaje_model.dart';
 import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/utils/app_colors.dart';
 
 class HistorialViajesPage extends StatefulWidget {
   @override
@@ -66,7 +67,7 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error al cargar viajes: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
     }
@@ -75,17 +76,17 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
   Color _getColorEstado(String estado) {
     switch (estado.toLowerCase()) {
       case 'completado':
-        return Colors.green;
+        return AppColors.successColor;
       case 'cancelado':
-        return Colors.red;
+        return AppColors.errorColor;
       case 'en_progreso':
-        return Colors.orange;
+        return AppColors.primaryYellow;
       case 'aceptado':
-        return Colors.blue;
+        return AppColors.primaryDark;
       case 'solicitado':
-        return Colors.grey;
+        return AppColors.mediumGrey;
       default:
-        return Colors.grey;
+        return AppColors.mediumGrey;
     }
   }
 
@@ -118,10 +119,11 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Historial de Viajes'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -133,14 +135,14 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                       Icon(
                         Icons.history,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: AppColors.mediumGrey,
                       ),
                       SizedBox(height: 16),
                       Text(
                         'No hay viajes registrados',
                         style: TextStyle(
                           fontSize: 18,
-                          color: Colors.grey[600],
+                          color: AppColors.mediumGrey,
                         ),
                       ),
                     ],
@@ -154,6 +156,7 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                     itemBuilder: (context, index) {
                       final viaje = _viajes[index];
                       return Card(
+                        color: AppColors.primaryDark.withOpacity(0.3),
                         margin: EdgeInsets.only(bottom: 12),
                         elevation: 2,
                         child: InkWell(
@@ -194,14 +197,14 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                                       Row(
                                         children: [
                                           Icon(Icons.star,
-                                              size: 16, color: Colors.orange),
+                                              size: 16, color: AppColors.primaryYellow),
                                           SizedBox(width: 4),
                                           Text(
                                             viaje.calificacion!
                                                 .toStringAsFixed(1),
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.orange[700],
+                                              color: AppColors.primaryYellow,
                                             ),
                                           ),
                                         ],
@@ -212,13 +215,14 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                                 Row(
                                   children: [
                                     Icon(Icons.location_on,
-                                        color: Colors.green, size: 20),
+                                        color: AppColors.successColor, size: 20),
                                     SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         viaje.direccionOrigen,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w500,
+                                          color: AppColors.white,
                                         ),
                                       ),
                                     ),
@@ -228,13 +232,14 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                                 Row(
                                   children: [
                                     Icon(Icons.flag,
-                                        color: Colors.red, size: 20),
+                                        color: AppColors.errorColor, size: 20),
                                     SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         viaje.direccionDestino,
                                         style: TextStyle(
                                           fontWeight: FontWeight.w500,
+                                          color: AppColors.white,
                                         ),
                                       ),
                                     ),
@@ -250,20 +255,20 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                                       children: [
                                         Icon(Icons.calendar_today,
                                             size: 16,
-                                            color: Colors.grey[600]),
+                                            color: AppColors.mediumGrey),
                                         SizedBox(width: 4),
                                         Text(
                                           _formatearFecha(viaje.fechaCreacion),
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.grey[600],
+                                            color: AppColors.mediumGrey,
                                           ),
                                         ),
                                       ],
                                     ),
                                     if (viaje.comentario != null)
                                       Icon(Icons.message,
-                                          size: 16, color: Colors.grey[600]),
+                                          size: 16, color: AppColors.mediumGrey),
                                   ],
                                 ),
                               ],

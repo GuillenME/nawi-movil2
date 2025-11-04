@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/utils/validators.dart';
+import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/login_page.dart';
 
 class ResetPasswordPage extends StatefulWidget {
@@ -132,7 +133,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
           duration: Duration(seconds: 4),
         ),
       );
@@ -142,11 +143,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Restablecer Contraseña'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -162,7 +163,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 Icon(
                   Icons.lock_outline,
                   size: 80,
-                  color: Colors.blue[700],
+                  color: AppColors.primaryYellow,
                 ),
                 SizedBox(height: 20),
                 
@@ -172,7 +173,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                    color: AppColors.primaryYellow,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -183,7 +184,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   'Pega el enlace completo del correo o el código que recibiste.',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: AppColors.mediumGrey,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -191,20 +192,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 Container(
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: AppColors.primaryDark.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
+                    border: Border.all(color: AppColors.primaryYellow.withOpacity(0.5)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                      Icon(Icons.info_outline, color: AppColors.primaryYellow, size: 20),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Puedes copiar y pegar todo el enlace del correo que empieza con "https://nawi.click/password/reset/..."',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.blue[900],
+                            color: AppColors.mediumGrey,
                           ),
                         ),
                       ),
@@ -217,20 +218,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: AppColors.primaryDark.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[200]!),
+                    border: Border.all(color: AppColors.primaryYellow.withOpacity(0.5)),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.email, color: Colors.blue[700]),
+                      Icon(Icons.email, color: AppColors.primaryYellow),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           widget.email,
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.blue[700],
+                            color: AppColors.primaryYellow,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -246,16 +247,29 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   enabled: !_isLoading,
                   maxLines: null,
                   keyboardType: TextInputType.text,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Enlace o código de recuperación',
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
                     hintText: 'Pega aquí el enlace completo del correo',
-                    prefixIcon: Icon(Icons.link),
+                    hintStyle: TextStyle(color: AppColors.mediumGrey.withOpacity(0.7)),
+                    prefixIcon: Icon(Icons.link, color: AppColors.primaryYellow),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                     helperText: 'Ejemplo: https://nawi.click/password/reset/... (pega todo el enlace)',
+                    helperStyle: TextStyle(color: AppColors.mediumGrey),
                     helperMaxLines: 2,
                   ),
                   validator: (value) {
@@ -276,14 +290,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   enabled: !_isLoading,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Nueva contraseña',
-                    prefixIcon: Icon(Icons.lock),
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon: Icon(Icons.lock, color: AppColors.primaryYellow),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.mediumGrey,
                       ),
                       onPressed: () {
                         setState(() {
@@ -293,9 +310,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
                   validator: Validators.validatePassword,
                 ),
@@ -306,14 +332,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   enabled: !_isLoading,
+                  style: TextStyle(color: AppColors.white),
                   decoration: InputDecoration(
                     labelText: 'Confirmar nueva contraseña',
-                    prefixIcon: Icon(Icons.lock_outline),
+                    labelStyle: TextStyle(color: AppColors.mediumGrey),
+                    prefixIcon: Icon(Icons.lock_outline, color: AppColors.primaryYellow),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
                             ? Icons.visibility
                             : Icons.visibility_off,
+                        color: AppColors.mediumGrey,
                       ),
                       onPressed: () {
                         setState(() {
@@ -323,9 +352,18 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.mediumGrey),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
                   validator: (value) => Validators.validateConfirmPassword(
                     value,
@@ -338,15 +376,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _resetPassword,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[700],
-                    foregroundColor: Colors.white,
+                    backgroundColor: AppColors.primaryYellow,
+                    foregroundColor: AppColors.primaryDark,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: AppColors.primaryDark)
                       : Text(
                           'Restablecer Contraseña',
                           style: TextStyle(
@@ -368,7 +406,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   child: Text(
                     'Volver al inicio de sesión',
                     style: TextStyle(
-                      color: Colors.blue[700],
+                      color: AppColors.primaryYellow,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

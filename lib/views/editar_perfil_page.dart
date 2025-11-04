@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/models/user_model.dart';
+import 'package:nawii/utils/app_colors.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -108,7 +109,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Perfil actualizado exitosamente'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.successColor,
             ),
           );
 
@@ -129,7 +130,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorColor,
         ),
       );
     } finally {
@@ -143,10 +144,11 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
+        backgroundColor: Colors.black,
         appBar: AppBar(
           title: Text('Editar Perfil'),
-          backgroundColor: Colors.blue[700],
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primaryDark,
+          foregroundColor: AppColors.white,
         ),
         body: Center(child: CircularProgressIndicator()),
       );
@@ -154,20 +156,22 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
 
     if (_currentUser == null) {
       return Scaffold(
+        backgroundColor: Colors.black,
         appBar: AppBar(
           title: Text('Editar Perfil'),
-          backgroundColor: Colors.blue[700],
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.primaryDark,
+          foregroundColor: AppColors.white,
         ),
-        body: Center(child: Text('Usuario no encontrado')),
+        body: Center(child: Text('Usuario no encontrado', style: TextStyle(color: AppColors.white))),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text('Editar Perfil'),
-        backgroundColor: Colors.blue[700],
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.primaryDark,
+        foregroundColor: AppColors.white,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -178,17 +182,18 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
             children: [
               // Información del usuario
               Card(
+                color: AppColors.primaryDark.withOpacity(0.3),
                 child: Padding(
                   padding: EdgeInsets.all(20),
                   child: Column(
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundColor: Colors.blue[100],
+                        backgroundColor: AppColors.primaryDark.withOpacity(0.5),
                         child: Icon(
                           Icons.person,
                           size: 50,
-                          color: Colors.blue[700],
+                          color: AppColors.primaryYellow,
                         ),
                       ),
                       SizedBox(height: 16),
@@ -197,7 +202,7 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue[700],
+                          color: AppColors.primaryYellow,
                         ),
                       ),
                     ],
@@ -209,12 +214,25 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               // Campo Nombre
               TextFormField(
                 controller: _nombreController,
+                style: TextStyle(color: AppColors.white),
                 decoration: InputDecoration(
                   labelText: 'Nombre',
-                  prefixIcon: Icon(Icons.person),
+                  labelStyle: TextStyle(color: AppColors.mediumGrey),
+                  prefixIcon: Icon(Icons.person, color: AppColors.primaryYellow),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.primaryDark.withOpacity(0.5),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -228,12 +246,25 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               // Campo Apellido
               TextFormField(
                 controller: _apellidoController,
+                style: TextStyle(color: AppColors.white),
                 decoration: InputDecoration(
                   labelText: 'Apellido',
-                  prefixIcon: Icon(Icons.person_outline),
+                  labelStyle: TextStyle(color: AppColors.mediumGrey),
+                  prefixIcon: Icon(Icons.person_outline, color: AppColors.primaryYellow),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.primaryDark.withOpacity(0.5),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -247,13 +278,22 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               // Campo Email (solo lectura)
               TextFormField(
                 controller: _emailController,
+                enabled: false,
+                style: TextStyle(color: AppColors.mediumGrey),
                 decoration: InputDecoration(
                   labelText: 'Correo electrónico',
-                  prefixIcon: Icon(Icons.email),
+                  labelStyle: TextStyle(color: AppColors.mediumGrey),
+                  prefixIcon: Icon(Icons.email, color: AppColors.mediumGrey),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
                   ),
-                  enabled: false,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.primaryDark.withOpacity(0.3),
                 ),
               ),
               SizedBox(height: 16),
@@ -261,15 +301,29 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               // Campo Teléfono
               TextFormField(
                 controller: _telefonoController,
+                keyboardType: TextInputType.phone,
+                style: TextStyle(color: AppColors.white),
                 decoration: InputDecoration(
                   labelText: 'Teléfono (opcional)',
-                  prefixIcon: Icon(Icons.phone),
+                  labelStyle: TextStyle(color: AppColors.mediumGrey),
+                  prefixIcon: Icon(Icons.phone, color: AppColors.primaryYellow),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
                   ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.mediumGrey),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: AppColors.primaryDark.withOpacity(0.5),
                   hintText: 'Ej: 1234567890',
+                  hintStyle: TextStyle(color: AppColors.mediumGrey.withOpacity(0.7)),
                 ),
-                keyboardType: TextInputType.phone,
               ),
               SizedBox(height: 24),
 
@@ -283,14 +337,14 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              AlwaysStoppedAnimation<Color>(AppColors.primaryDark),
                         ),
                       )
                     : Icon(Icons.save),
                 label: Text(_isSaving ? 'Guardando...' : 'Guardar Cambios'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[700],
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.primaryYellow,
+                  foregroundColor: AppColors.primaryDark,
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
