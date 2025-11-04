@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/utils/validators.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -107,12 +108,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu nombre';
-                    }
-                    return null;
-                  },
+                  validator: (value) => Validators.validateRequired(value, 'tu nombre'),
                 ),
                 SizedBox(height: 16),
 
@@ -128,12 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu apellido';
-                    }
-                    return null;
-                  },
+                  validator: (value) => Validators.validateRequired(value, 'tu apellido'),
                 ),
                 SizedBox(height: 16),
 
@@ -150,15 +141,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu correo';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un correo válido';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validateEmail,
                 ),
                 SizedBox(height: 16),
 
@@ -175,12 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu teléfono';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validatePhone,
                 ),
                 SizedBox(height: 16),
 
@@ -248,15 +226,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa una contraseña';
-                    }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validatePassword,
                 ),
                 SizedBox(height: 16),
 
@@ -285,12 +255,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor confirma tu contraseña';
-                    }
-                    return null;
-                  },
+                  validator: (value) => Validators.validateConfirmPassword(
+                    value,
+                    _passwordController.text,
+                  ),
                 ),
                 SizedBox(height: 24),
 

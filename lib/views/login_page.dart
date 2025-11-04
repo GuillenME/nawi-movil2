@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/utils/validators.dart';
 import 'package:nawii/views/register_page.dart';
+import 'package:nawii/views/forgot_password_page.dart';
 import 'package:nawii/views/home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -106,15 +108,7 @@ class _LoginPageState extends State<LoginPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu correo';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Por favor ingresa un correo válido';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validateEmail,
                 ),
                 SizedBox(height: 16),
 
@@ -143,17 +137,32 @@ class _LoginPageState extends State<LoginPage> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
-                    }
-                    return null;
-                  },
+                  validator: Validators.validatePassword,
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 16),
+
+                // Enlace de olvidé mi contraseña
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ForgotPasswordPage(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      '¿Olvidaste tu contraseña?',
+                      style: TextStyle(
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
 
                 // Botón de login
                 ElevatedButton(
