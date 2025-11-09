@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.nawii"
-        minSdk 21
+        minSdkVersion flutter.minSdkVersion
         targetSdk 35
         versionCode 1
         versionName "1.0"

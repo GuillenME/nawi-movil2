@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/utils/validators.dart';
 import 'package:nawii/utils/app_colors.dart';
-import 'package:nawii/widgets/nawi_logo.dart';
 import 'package:nawii/views/register_page.dart';
 import 'package:nawii/views/forgot_password_page.dart';
 import 'package:nawii/views/home_page.dart';
@@ -70,12 +69,21 @@ class _LoginPageState extends State<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: 40),
-                // Logo de NAWI
+                // Imagen del splash
                 Center(
-                  child: NawiLogo(
-                    size: 100,
-                    showText: true,
-                    showTagline: true,
+                  child: Image.asset(
+                    'assets/images/image.png',
+                    width: 150,
+                    height: 150,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Si la imagen no existe, muestra un placeholder
+                      return Icon(
+                        Icons.image,
+                        size: 100,
+                        color: AppColors.primaryYellow,
+                      );
+                    },
                   ),
                 ),
                 SizedBox(height: 40),
