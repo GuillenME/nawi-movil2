@@ -17,6 +17,11 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU" />
         
+        <!-- AdMob Application ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1838002939487298~5835495235"/>
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"

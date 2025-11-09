@@ -7,6 +7,7 @@ import 'package:nawii/views/pasajero/solicitar_viaje_con_mapa_page.dart';
 import 'package:nawii/views/taxista/taxista_home_page.dart';
 import 'package:nawii/views/perfil_page.dart';
 import 'package:nawii/views/historial_viajes_page.dart';
+import 'package:nawii/widgets/banner_ad_widget.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -76,6 +77,8 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: _currentUser!.isTaxista ? TaxistaHomePage() : PasajeroHomePage(),
+      // Banner fijo en la parte inferior
+      bottomNavigationBar: MyBannerAdWidget(),
     );
   }
 }
@@ -95,7 +98,8 @@ class PasajeroHomePage extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.primaryDark.withOpacity(0.3),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.primaryYellow.withOpacity(0.5)),
+              border:
+                  Border.all(color: AppColors.primaryYellow.withOpacity(0.5)),
             ),
             child: Column(
               children: [
@@ -159,9 +163,12 @@ class PasajeroHomePage extends StatelessWidget {
                 child: Card(
                   color: AppColors.primaryDark.withOpacity(0.3),
                   child: ListTile(
-                    leading: Icon(Icons.history, color: AppColors.primaryYellow),
-                    title: Text('Historial', style: TextStyle(color: AppColors.white)),
-                    subtitle: Text('Ver viajes anteriores', style: TextStyle(color: AppColors.mediumGrey)),
+                    leading:
+                        Icon(Icons.history, color: AppColors.primaryYellow),
+                    title: Text('Historial',
+                        style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ver viajes anteriores',
+                        style: TextStyle(color: AppColors.mediumGrey)),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -179,8 +186,10 @@ class PasajeroHomePage extends StatelessWidget {
                   color: AppColors.primaryDark.withOpacity(0.3),
                   child: ListTile(
                     leading: Icon(Icons.star, color: AppColors.primaryYellow),
-                    title: Text('Calificaciones', style: TextStyle(color: AppColors.white)),
-                    subtitle: Text('Ver mis calificaciones', style: TextStyle(color: AppColors.mediumGrey)),
+                    title: Text('Calificaciones',
+                        style: TextStyle(color: AppColors.white)),
+                    subtitle: Text('Ver mis calificaciones',
+                        style: TextStyle(color: AppColors.mediumGrey)),
                     onTap: () {
                       // TODO: Implementar calificaciones
                       ScaffoldMessenger.of(context).showSnackBar(

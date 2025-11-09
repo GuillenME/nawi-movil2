@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:nawii/views/login_page.dart';
 import 'package:nawii/views/home_page.dart';
 import 'package:nawii/services/auth_service.dart';
@@ -14,6 +15,13 @@ void main() async {
   } catch (e) {
     print('Error inicializando Firebase: $e');
     // Si Firebase falla, continuamos sin él por ahora
+  }
+  
+  // Inicializar Google Mobile Ads
+  try {
+    await MobileAds.instance.initialize();
+  } catch (e) {
+    print('Error inicializando MobileAds: $e');
   }
   
   runApp(MyApp());
