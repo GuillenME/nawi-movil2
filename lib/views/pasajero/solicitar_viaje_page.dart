@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/views/pasajero/solicitar_viaje_simple_page.dart';
 import 'package:nawii/services/location_service_simple.dart';
+import 'package:nawii/widgets/places_autocomplete_field.dart';
 
 class SolicitarViajePage extends StatefulWidget {
   @override
@@ -193,8 +195,12 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                       ),
                     ),
                     SizedBox(height: 8),
-                    TextField(
+                    PlacesAutocompleteField(
                       controller: _destinoController,
+                      hintText: 'Ingresa tu destino',
+                      prefixIcon: Icons.flag,
+                      prefixIconColor: Colors.red,
+                      apiKey: 'AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU',
                       decoration: InputDecoration(
                         hintText: 'Ingresa tu destino',
                         prefixIcon: Icon(Icons.flag, color: Colors.red),
@@ -204,6 +210,10 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
+                      onPlaceSelected: (placeId, description) {
+                        // El lugar ya está seleccionado y el texto ya está en el controller
+                        print('Lugar seleccionado: $description');
+                      },
                     ),
                   ],
                 ),

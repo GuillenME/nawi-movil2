@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:http/http.dart' as http;
 import 'package:nawii/models/viaje_model.dart';
+import 'package:nawii/models/user_model.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/services/location_service_simple.dart';
 
@@ -414,6 +415,36 @@ class TaxistaService {
       return null;
     } catch (e) {
       print('Error obteniendo estado del viaje: $e');
+      return null;
+    }
+  }
+
+  // Obtener datos de usuario por ID
+  Future<UserModel?> obtenerUsuarioPorId(String userId) async {
+    try {
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty) {
+        throw Exception('Token no encontrado');
+      }
+
+      final token = tokenRaw.trim();
+      final response = await http.get(
+        Uri.parse('$baseUrl/usuario/$userId'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return UserModel.fromJson(data['data']);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error al obtener usuario: $e');
       return null;
     }
   }

@@ -10,9 +10,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
-        <!-- Google Maps API Key - DEBE estar al nivel de <application> -->
-        <!-- ⚠️ REEMPLAZA el valor con tu API Key real de Google Maps -->
-        <!-- Obtén tu API Key en: https://console.cloud.google.com/ -->
+        <!-- Google Maps API Key -->        
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU" />

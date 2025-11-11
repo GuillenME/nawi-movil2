@@ -112,5 +112,38 @@ class Validators {
     
     return null;
   }
+
+  /// Valida una ubicación/dirección
+  /// Solo permite letras, números, espacios, comas, puntos, guiones y caracteres comunes de direcciones
+  /// Rechaza caracteres peligrosos como <, >, /, etc.
+  static String? validateLocation(String? value) {
+    if (value == null || value.isEmpty || value.trim().isEmpty) {
+      return 'Por favor ingresa una ubicación';
+    }
+    
+    // Expresión regular que permite letras, números, espacios, comas, puntos, guiones, 
+    // números, acentos y caracteres comunes de direcciones
+    // Rechaza caracteres peligrosos como <, >, /, \, etc.
+    final locationRegex = RegExp(r'^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s,.\-°#]+$');
+    
+    // Verificar que no contenga caracteres peligrosos
+    if (value.contains('<') || value.contains('>') || value.contains('/') || 
+        value.contains('\\') || value.contains('&') || value.contains('"') || 
+        value.contains("'") || value.contains(';')) {
+      return 'La ubicación no puede contener caracteres especiales como <, >, /, etc.';
+    }
+    
+    // Verificar que coincida con el patrón
+    if (!locationRegex.hasMatch(value.trim())) {
+      return 'La ubicación solo puede contener letras, números y caracteres comunes de direcciones';
+    }
+    
+    // Verificar longitud mínima
+    if (value.trim().length < 3) {
+      return 'La ubicación debe tener al menos 3 caracteres';
+    }
+    
+    return null;
+  }
 }
 

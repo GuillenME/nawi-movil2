@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/models/viaje_model.dart';
+import 'package:nawii/models/user_model.dart';
 import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/pasajero/viaje_en_curso_page.dart';
+import 'package:nawii/widgets/places_autocomplete_field.dart';
 
 class SolicitarViajeConMapaPage extends StatefulWidget {
   @override
@@ -205,13 +208,21 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
     _mostrarInfoTaxista(taxista);
   }
 
-  void _mostrarInfoTaxista(Map<String, dynamic> taxista) {
+  void _mostrarInfoTaxista(Map<String, dynamic> taxista) async {
     final distancia = LocationServiceSimple.calculateDistance(
       _userLocation['latitude']!,
       _userLocation['longitude']!,
       taxista['latitude'],
       taxista['longitude'],
     );
+
+    // Obtener datos completos del taxista
+    UserModel? taxistaData;
+    try {
+      taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxista['id']);
+    } catch (e) {
+      print('Error al obtener datos del taxista: $e');
+    }
 
     showModalBottomSheet(
       context: context,
@@ -234,12 +245,43 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Taxista ${taxista['id'].substring(0, 8)}...',
+                        taxistaData != null 
+                            ? taxistaData.nombreCompleto
+                            : 'Taxista ${taxista['id'].substring(0, 8)}...',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (taxistaData != null && taxistaData.telefono != null) ...[
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.phone, color: AppColors.mediumGrey, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              taxistaData.telefono!,
+                              style: TextStyle(color: AppColors.mediumGrey, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (taxistaData != null && taxistaData.email.isNotEmpty) ...[
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.email, color: AppColors.mediumGrey, size: 16),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                taxistaData.email,
+                                style: TextStyle(color: AppColors.mediumGrey, fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       SizedBox(height: 4),
                       Row(
                         children: [
@@ -462,9 +504,12 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
+                        child: PlacesAutocompleteField(
                           controller: _destinoController,
-                          style: TextStyle(color: AppColors.white),
+                          hintText: 'Ingresa tu destino',
+                          prefixIcon: Icons.flag,
+                          prefixIconColor: AppColors.errorColor,
+                          apiKey: 'AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU',
                           decoration: InputDecoration(
                             hintText: 'Ingresa tu destino',
                             hintStyle: TextStyle(color: AppColors.mediumGrey),
@@ -484,6 +529,12 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                             filled: true,
                             fillColor: AppColors.primaryDark.withOpacity(0.7),
                           ),
+                          onPlaceSelected: (placeId, description) {
+                            // El lugar ya está seleccionado y el texto ya está en el controller
+                            print('Lugar seleccionado: $description');
+                            // Confirmar automáticamente el destino
+                            _confirmarDestino();
+                          },
                         ),
                       ),
                       SizedBox(width: 8),

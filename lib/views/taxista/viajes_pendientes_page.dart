@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/models/viaje_model.dart';
+import 'package:nawii/models/user_model.dart';
 import 'package:nawii/services/taxista_service.dart';
+import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/views/taxista/viaje_en_curso_page.dart';
 
@@ -13,11 +15,13 @@ class ViajesPendientesPage extends StatefulWidget {
 
 class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
   final TaxistaService _taxistaService = TaxistaService();
+  final PasajeroService _pasajeroService = PasajeroService();
   final DatabaseReference viajesRef = FirebaseDatabase.instance.ref('viajes');
   List<ViajeModel> _viajesPendientes = [];
   StreamSubscription? _viajesSubscription;
   bool _isLoading = true;
   String? _taxistaId;
+  Map<String, UserModel> _usuariosCache = {};
 
   @override
   void initState() {
@@ -106,18 +110,26 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
       
       if (salida == null || destino == null) return null;
 
+      final latOrigen = salida['lat']?.toDouble() ?? 0.0;
+      final lonOrigen = salida['lon']?.toDouble() ?? 0.0;
+      final latDestino = destino['lat']?.toDouble() ?? 0.0;
+      final lonDestino = destino['lon']?.toDouble() ?? 0.0;
+
+      // Obtener direcciones reales de forma asíncrona (se actualizarán después)
+      _obtenerDireccionesParaViaje(viajeId, latOrigen, lonOrigen, latDestino, lonDestino);
+
       return ViajeModel(
         id: viajeId,
         pasajeroId: int.tryParse(viajeData['id_pasajero']?.toString() ?? '0') ?? 0,
         taxistaId: viajeData['id_taxista'] != null 
             ? int.tryParse(viajeData['id_taxista'].toString()) 
             : null,
-        latitudOrigen: salida['lat']?.toDouble() ?? 0.0,
-        longitudOrigen: salida['lon']?.toDouble() ?? 0.0,
-        direccionOrigen: 'Origen',
-        latitudDestino: destino['lat']?.toDouble() ?? 0.0,
-        longitudDestino: destino['lon']?.toDouble() ?? 0.0,
-        direccionDestino: 'Destino',
+        latitudOrigen: latOrigen,
+        longitudOrigen: lonOrigen,
+        direccionOrigen: 'Obteniendo dirección...',
+        latitudDestino: latDestino,
+        longitudDestino: lonDestino,
+        direccionDestino: 'Obteniendo dirección...',
         estado: viajeData['estado'] ?? 'solicitado',
         fechaCreacion: DateTime.fromMillisecondsSinceEpoch(
           viajeData['timestamp'] as int? ?? DateTime.now().millisecondsSinceEpoch,
@@ -126,6 +138,65 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
     } catch (e) {
       print('Error en _convertirFirebaseAViaje: $e');
       return null;
+    }
+  }
+
+  Future<void> _obtenerDireccionesParaViaje(
+    String viajeId,
+    double latOrigen,
+    double lonOrigen,
+    double latDestino,
+    double lonDestino,
+  ) async {
+    try {
+      // Obtener direcciones en paralelo
+      final direcciones = await Future.wait([
+        _pasajeroService.obtenerDireccionDesdeCoordenadas(latOrigen, lonOrigen),
+        _pasajeroService.obtenerDireccionDesdeCoordenadas(latDestino, lonDestino),
+      ]);
+
+      // Actualizar el viaje en la lista
+      setState(() {
+        final index = _viajesPendientes.indexWhere((v) => v.id == viajeId);
+        if (index != -1) {
+          final viaje = _viajesPendientes[index];
+          _viajesPendientes[index] = ViajeModel(
+            id: viaje.id,
+            pasajeroId: viaje.pasajeroId,
+            taxistaId: viaje.taxistaId,
+            latitudOrigen: viaje.latitudOrigen,
+            longitudOrigen: viaje.longitudOrigen,
+            direccionOrigen: direcciones[0],
+            latitudDestino: viaje.latitudDestino,
+            longitudDestino: viaje.longitudDestino,
+            direccionDestino: direcciones[1],
+            estado: viaje.estado,
+            fechaCreacion: viaje.fechaCreacion,
+          );
+        }
+      });
+    } catch (e) {
+      print('Error al obtener direcciones: $e');
+      // Si falla, usar coordenadas como fallback
+      setState(() {
+        final index = _viajesPendientes.indexWhere((v) => v.id == viajeId);
+        if (index != -1) {
+          final viaje = _viajesPendientes[index];
+          _viajesPendientes[index] = ViajeModel(
+            id: viaje.id,
+            pasajeroId: viaje.pasajeroId,
+            taxistaId: viaje.taxistaId,
+            latitudOrigen: viaje.latitudOrigen,
+            longitudOrigen: viaje.longitudOrigen,
+            direccionOrigen: 'Ubicación (${latOrigen.toStringAsFixed(4)}, ${lonOrigen.toStringAsFixed(4)})',
+            latitudDestino: viaje.latitudDestino,
+            longitudDestino: viaje.longitudDestino,
+            direccionDestino: 'Ubicación (${latDestino.toStringAsFixed(4)}, ${lonDestino.toStringAsFixed(4)})',
+            estado: viaje.estado,
+            fechaCreacion: viaje.fechaCreacion,
+          );
+        }
+      });
     }
   }
 
@@ -278,91 +349,145 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                     itemCount: _viajesPendientes.length,
                     itemBuilder: (context, index) {
                       final viaje = _viajesPendientes[index];
-                      return Card(
-                        margin: EdgeInsets.only(bottom: 16),
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                      return FutureBuilder<UserModel?>(
+                        future: _obtenerDatosUsuario(viaje.pasajeroId.toString()),
+                        builder: (context, snapshot) {
+                          final usuario = snapshot.data;
+                          return Card(
+                            margin: EdgeInsets.only(bottom: 16),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.location_on, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      viaje.direccionOrigen,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                  // Información del pasajero
+                                  if (usuario != null) ...[
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          backgroundColor: Colors.blue[700],
+                                          radius: 20,
+                                          child: Icon(Icons.person, color: Colors.white, size: 20),
+                                        ),
+                                        SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                usuario.nombreCompleto,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              if (usuario.telefono != null) ...[
+                                                SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    Icon(Icons.phone, size: 14, color: Colors.grey[600]),
+                                                    SizedBox(width: 4),
+                                                    Text(
+                                                      usuario.telefono!,
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16),
+                                    Divider(),
+                                    SizedBox(height: 8),
+                                  ],
+                                  // Origen
+                                  Row(
+                                    children: [
+                                      Icon(Icons.location_on, color: Colors.red),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          viaje.direccionOrigen,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(Icons.flag, color: Colors.green),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      viaje.direccionDestino,
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Icon(Icons.access_time,
-                                      size: 16, color: Colors.grey[600]),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Hace ${_calcularTiempo(viaje.fechaCreacion)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () => _aceptarViaje(viaje),
-                                      icon: Icon(Icons.check, size: 18),
-                                      label: Text('Aceptar'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green[700],
-                                        foregroundColor: Colors.white,
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                  SizedBox(height: 8),
+                                  // Destino
+                                  Row(
+                                    children: [
+                                      Icon(Icons.flag, color: Colors.green),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          viaje.direccionDestino,
+                                          style: TextStyle(fontSize: 14),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () => _rechazarViaje(viaje),
-                                      icon: Icon(Icons.close, size: 18),
-                                      label: Text('Rechazar'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red[700],
-                                        foregroundColor: Colors.white,
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 12),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 16, color: Colors.grey[600]),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Hace ${_calcularTiempo(viaje.fechaCreacion)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
                                       ),
-                                    ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => _aceptarViaje(viaje),
+                                          icon: Icon(Icons.check, size: 18),
+                                          label: Text('Aceptar'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green[700],
+                                            foregroundColor: Colors.white,
+                                            padding:
+                                                EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () => _rechazarViaje(viaje),
+                                          icon: Icon(Icons.close, size: 18),
+                                          label: Text('Rechazar'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red[700],
+                                            foregroundColor: Colors.white,
+                                            padding:
+                                                EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -380,6 +505,23 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
       return '${diferencia.inHours} h';
     } else {
       return '${diferencia.inDays} días';
+    }
+  }
+
+  Future<UserModel?> _obtenerDatosUsuario(String userId) async {
+    if (_usuariosCache.containsKey(userId)) {
+      return _usuariosCache[userId];
+    }
+    
+    try {
+      final usuario = await _pasajeroService.obtenerUsuarioPorId(userId);
+      if (usuario != null) {
+        _usuariosCache[userId] = usuario;
+      }
+      return usuario;
+    } catch (e) {
+      print('Error al obtener datos del usuario: $e');
+      return null;
     }
   }
 }

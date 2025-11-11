@@ -8,20 +8,11 @@ class MyBannerAdWidget extends StatefulWidget {
   /// The requested size of the banner. Defaults to [AdSize.banner].
   final AdSize adSize;
 
-  /// The AdMob ad unit to show.
-  /// Uses test IDs in debug mode, production IDs in release mode.
-  String get adUnitId {
-    // En modo debug, usar IDs de prueba de AdMob
-    if (kDebugMode) {
-      return Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/6300978111' // Test ID Android
-          : 'ca-app-pub-3940256099942544/2934735716'; // Test ID iOS
-    }
-    // En release, usar IDs de producción
-    return Platform.isAndroid
-        ? 'ca-app-pub-1838002939487298/1490385105' // Production ID Android
-        : 'ca-app-pub-1838002939487298/5731553456'; // Production ID iOS
-  }
+  final String adUnitId = Platform.isAndroid
+      // Use this ad unit on Android...
+      ? 'ca-app-pub-1838002939487298/1490385105'
+      // ... or this one on iOS.
+      : 'ca-app-pub-1838002939487298/5731553456';
 
   MyBannerAdWidget({super.key, this.adSize = AdSize.banner});
 
