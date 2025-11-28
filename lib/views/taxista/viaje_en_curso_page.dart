@@ -5,6 +5,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/services/session_service.dart';
 
 class TaxistaViajeEnCursoPage extends StatefulWidget {
   final String viajeId;
@@ -298,6 +299,13 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
     if (confirmar == true) {
       try {
         final result = await _taxistaService.completarViaje(widget.viajeId);
+        
+        // Verificar si la sesión expiró
+        final sessionHandled = await SessionService.handleServiceResult(context, result);
+        if (sessionHandled) {
+          return;
+        }
+
         if (result['success']) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

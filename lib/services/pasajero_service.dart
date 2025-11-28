@@ -16,6 +16,7 @@ class PasajeroService {
     required double destinoLat,
     required double destinoLon,
     String? idTaxista, // ID del taxista específico si se seleccionó uno
+    int? tiempoLimiteMinutos, // ⭐ NUEVO: Tiempo límite en minutos (1-30), por defecto 5
   }) async {
     try {
       final user = await AuthService.getCurrentUser();
@@ -112,6 +113,12 @@ class PasajeroService {
             '   Si el error persiste, verifica que el taxista se guardó en Firebase usando su ID real de MySQL');
       }
 
+      // ⭐ NUEVO: Agregar tiempo_limite_minutos si se proporciona (1-30 minutos)
+      if (tiempoLimiteMinutos != null && tiempoLimiteMinutos >= 1 && tiempoLimiteMinutos <= 30) {
+        requestBody['tiempo_limite_minutos'] = tiempoLimiteMinutos;
+        print('⏱️  Tiempo límite de aceptación: $tiempoLimiteMinutos minutos');
+      }
+
       print('📤 Enviando datos:');
       print('   id_pasajero: [obtenido del token JWT por el backend]');
       print('   salida: lat=$salidaLat, lon=$salidaLon');
@@ -182,11 +189,13 @@ class PasajeroService {
           print('❌ Error 401: ${errorData['message'] ?? 'No autorizado'}');
           return {
             'success': false,
+            'session_expired': true,
             'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
           };
         } catch (e) {
           return {
             'success': false,
+            'session_expired': true,
             'message': 'No autorizado. Por favor inicia sesión nuevamente.',
           };
         }
@@ -261,16 +270,34 @@ class PasajeroService {
   }
 
   // Ver mis viajes
-  Future<List<ViajeModel>> obtenerMisViajes() async {
+  Future<Map<String, dynamic>> obtenerMisViajes() async {
     try {
       final user = await AuthService.getCurrentUser();
-      if (user == null) throw Exception('Usuario no autenticado');
+      if (user == null) {
+        return {
+          'success': false,
+          'session_expired': true,
+          'message': 'Usuario no autenticado',
+          'viajes': <ViajeModel>[],
+        };
+      }
 
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty || tokenRaw.trim().isEmpty) {
+        return {
+          'success': false,
+          'session_expired': true,
+          'message': 'Token no encontrado',
+          'viajes': <ViajeModel>[],
+        };
+      }
+
+      final token = tokenRaw.trim();
       final response = await http.get(
         Uri.parse('$baseUrl/pasajero/mis-viajes'),
         headers: {
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${user.token}',
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -281,13 +308,29 @@ class PasajeroService {
           for (var viajeData in data['data']) {
             viajes.add(ViajeModel.fromJson(viajeData));
           }
-          return viajes;
+          return {
+            'success': true,
+            'viajes': viajes,
+          };
         }
+      } else if (response.statusCode == 401) {
+        return {
+          'success': false,
+          'session_expired': true,
+          'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
+          'viajes': <ViajeModel>[],
+        };
       }
-      return [];
+      return {
+        'success': false,
+        'viajes': <ViajeModel>[],
+      };
     } catch (e) {
       print('Error obteniendo viajes: $e');
-      return [];
+      return {
+        'success': false,
+        'viajes': <ViajeModel>[],
+      };
     }
   }
 
@@ -342,6 +385,7 @@ class PasajeroService {
       } else if (response.statusCode == 401) {
         return {
           'success': false,
+          'session_expired': true,
           'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
         };
       } else {
@@ -490,49 +534,24 @@ class PasajeroService {
   Future<Map<String, double>> obtenerCoordenadasDesdeDireccion(
       String direccion) async {
     try {
-      // Coordenadas exactas de la Universidad Tecnológica de la Selva (Ocosingo)
-      // Si la búsqueda es específica de UTS, usar coordenadas conocidas directamente
-      String direccionLower = direccion.toLowerCase().trim();
-
-      // Detectar búsquedas relacionadas con UTS (más permisivo)
-      bool esUTS = direccionLower.contains('utselva') ||
-          direccionLower.contains('ut selva') ||
-          direccionLower.contains('ut-selva') ||
-          direccionLower.contains('universidad tecnológica de la selva') ||
-          direccionLower.contains('universidad tecnologica de la selva') ||
-          direccionLower.contains('tecnológica de la selva') ||
-          direccionLower.contains('tecnologica de la selva') ||
-          (direccionLower.contains('uts') &&
-              direccionLower.contains('ocosingo')) ||
-          direccionLower == 'uts' ||
-          direccionLower == 'ut selva' ||
-          direccionLower == 'utselva';
-
-      if (esUTS) {
-        // Coordenadas exactas proporcionadas por el usuario: 16.896051266804303, -92.06722136049255
-        print('📍 Búsqueda de UTS detectada: "$direccion"');
-        print(
-            '   Usando coordenadas exactas: 16.896051266804303, -92.06722136049255');
-        return {
-          'lat': 16.896051266804303,
-          'lng': -92.06722136049255,
-        };
-      }
-
       // API Key de Google Maps (debe ser la misma que usas en AndroidManifest.xml)
       const String apiKey = 'AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU';
 
-      // Agregar contexto de región para mejorar la precisión (Chiapas, México)
+      // ⭐ ACTUALIZADO: Siempre agregar Ocosingo, Chiapas para restringir búsqueda
       String direccionConContexto = direccion;
-      if (!direccion.toLowerCase().contains('chiapas') &&
-          !direccion.toLowerCase().contains('méxico') &&
-          !direccion.toLowerCase().contains('mexico')) {
+      if (!direccion.toLowerCase().contains('ocosingo')) {
         direccionConContexto = '$direccion, Ocosingo, Chiapas, México';
       }
 
-      // URL de Geocoding API con región y componentes para mejorar precisión
+      // ⭐ NUEVO: Coordenadas del centro de Ocosingo para location bias
+      // Esto ayuda a que Google priorice resultados cercanos a Ocosingo
+      const double ocosingoLat = 16.9064;
+      const double ocosingoLng = -92.0937;
+      const int radius = 10000; // 10 km de radio desde el centro de Ocosingo
+
+      // URL de Geocoding API con restricción a Ocosingo
       final String url = Uri.encodeFull(
-          'https://maps.googleapis.com/maps/api/geocode/json?address=$direccionConContexto&region=mx&components=country:MX&key=$apiKey');
+          'https://maps.googleapis.com/maps/api/geocode/json?address=$direccionConContexto&region=mx&components=locality:Ocosingo|administrative_area:Chiapas|country:MX&location=$ocosingoLat,$ocosingoLng&radius=$radius&key=$apiKey');
 
       print('🔍 Buscando dirección: $direccionConContexto');
 
@@ -606,12 +625,10 @@ class PasajeroService {
                 address.contains('universidad')) {
               puntuacion += 30;
             }
-            if ((direccionLower.contains('utselva') ||
-                    direccionLower.contains('ut selva')) &&
-                (address.contains('tecnológica') ||
-                    address.contains('selva') ||
-                    address.contains('utselva'))) {
-              puntuacion += 50;
+            
+            // ✅ BONUS: Priorizar resultados que mencionen Ocosingo
+            if (address.contains('ocosingo')) {
+              puntuacion += 40;
             }
 
             // ❌ PENALIZAR: Si es solo una calle o ruta sin establecimiento
@@ -674,29 +691,51 @@ class PasajeroService {
   // Obtener datos de usuario por ID
   Future<UserModel?> obtenerUsuarioPorId(String userId) async {
     try {
+      if (userId.isEmpty || userId.trim().isEmpty) {
+        print('❌ Error: userId está vacío');
+        return null;
+      }
+
       final tokenRaw = await AuthService.getToken();
       if (tokenRaw == null || tokenRaw.isEmpty) {
+        print('❌ Error: Token no encontrado');
         throw Exception('Token no encontrado');
       }
 
       final token = tokenRaw.trim();
+      final userIdLimpio = userId.trim();
+      
+      print('🔍 Obteniendo datos del usuario ID: $userIdLimpio');
+      print('🌐 URL: $baseUrl/usuario/$userIdLimpio');
+      
       final response = await http.get(
-        Uri.parse('$baseUrl/usuario/$userId'),
+        Uri.parse('$baseUrl/usuario/$userIdLimpio'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
-          return UserModel.fromJson(data['data']);
+          final usuario = UserModel.fromJson(data['data']);
+          print('✅ Usuario obtenido: ${usuario.nombreCompleto}');
+          return usuario;
+        } else {
+          print('⚠️  Respuesta exitosa pero sin datos: ${data['message'] ?? 'Sin mensaje'}');
         }
+      } else if (response.statusCode == 404) {
+        print('❌ Usuario no encontrado (404)');
+      } else {
+        print('❌ Error HTTP: ${response.statusCode}');
       }
       return null;
     } catch (e) {
-      print('Error al obtener usuario: $e');
+      print('❌ Error al obtener usuario $userId: $e');
       return null;
     }
   }

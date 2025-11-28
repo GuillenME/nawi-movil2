@@ -1,4 +1,4 @@
-package com.example.nawii
+package com.ocosingo.nawi
 
 import io.flutter.embedding.android.FlutterActivity
 

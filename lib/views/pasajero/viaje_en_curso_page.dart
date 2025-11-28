@@ -4,6 +4,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/services/pasajero_service.dart';
+import 'package:nawii/services/session_service.dart';
+import 'package:nawii/utils/message_dialog.dart';
+import 'package:nawii/models/user_model.dart';
 import 'package:nawii/views/calificar_viaje_page.dart';
 
 class ViajeEnCursoPage extends StatefulWidget {
@@ -42,13 +45,28 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
   Map<String, double>? _ubicacionTaxista;
   String _estadoViaje = 'aceptado';
   bool _isCompletado = false;
+  UserModel? _taxistaData;
 
   @override
   void initState() {
     super.initState();
+    _cargarDatosTaxista();
     _inicializarMapa();
     _escucharEstadoViaje();
     _escucharUbicacionTaxista();
+  }
+
+  Future<void> _cargarDatosTaxista() async {
+    try {
+      final taxistaData = await _pasajeroService.obtenerUsuarioPorId(widget.taxistaId);
+      if (taxistaData != null) {
+        setState(() {
+          _taxistaData = taxistaData;
+        });
+      }
+    } catch (e) {
+      print('Error al cargar datos del taxista: $e');
+    }
   }
 
   @override
@@ -243,7 +261,7 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
                 MaterialPageRoute(
                   builder: (context) => CalificarViajePage(
                     viajeId: widget.viajeId,
-                    taxistaNombre: 'Taxista ${widget.taxistaId.substring(0, 8)}...',
+                    taxistaNombre: _taxistaData?.nombreCompleto ?? 'Taxista ${widget.taxistaId.substring(0, 8)}...',
                   ),
                 ),
               );
@@ -285,28 +303,32 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
     if (confirmar == true) {
       try {
         final result = await _pasajeroService.cancelarViaje(widget.viajeId);
+        
+        // Verificar si la sesión expiró
+        final sessionHandled = await SessionService.handleServiceResult(context, result);
+        if (sessionHandled) {
+          return;
+        }
+
         if (result['success']) {
           Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Viaje cancelado exitosamente'),
-              backgroundColor: Colors.green,
-            ),
+          MessageDialog.showSuccess(
+            context,
+            'Viaje cancelado exitosamente',
+            title: 'Viaje Cancelado',
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Error al cancelar viaje'),
-              backgroundColor: Colors.red,
-            ),
+          MessageDialog.showError(
+            context,
+            result['message'] ?? 'Error al cancelar viaje',
+            title: 'Error',
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+        MessageDialog.showError(
+          context,
+          'Error: $e',
+          title: 'Error',
         );
       }
     }

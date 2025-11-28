@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     
     <application
-        android:label="nawii"
+        android:label="Nawi"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
@@ -18,7 +18,7 @@
         <!-- AdMob Application ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-1838002939487298~5835495235"/>
+            android:value="ca-app-pub-1838002939487298~5863593008"/>
         
         <activity
             android:name=".MainActivity"

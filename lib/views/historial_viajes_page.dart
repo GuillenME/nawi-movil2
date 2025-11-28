@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/models/viaje_model.dart';
+import 'package:nawii/models/user_model.dart';
 import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/services/auth_service.dart';
+import 'package:nawii/services/session_service.dart';
 import 'package:nawii/utils/app_colors.dart';
 
 class HistorialViajesPage extends StatefulWidget {
@@ -17,6 +19,7 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
   List<ViajeModel> _viajes = [];
   bool _isLoading = true;
   bool _isTaxista = false;
+  Map<String, UserModel> _usuariosCache = {}; // Cache para datos de usuarios
 
   @override
   void initState() {
@@ -46,15 +49,38 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
     });
 
     try {
-      List<ViajeModel> viajes = [];
+      Map<String, dynamic> result;
       if (_isTaxista) {
-        viajes = await _taxistaService.obtenerMisViajes();
+        result = await _taxistaService.obtenerMisViajes();
       } else {
-        viajes = await _pasajeroService.obtenerMisViajes();
+        result = await _pasajeroService.obtenerMisViajes();
+      }
+
+      // Verificar si la sesión expiró
+      final sessionHandled = await SessionService.handleServiceResult(context, result);
+      if (sessionHandled) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      List<ViajeModel> viajes = [];
+      if (result['success'] == true && result['viajes'] != null) {
+        viajes = List<ViajeModel>.from(result['viajes']);
       }
 
       // Ordenar por fecha (más recientes primero)
       viajes.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+
+      // Cargar datos de usuarios que no vienen anidados
+      for (var viaje in viajes) {
+        if (_isTaxista && viaje.pasajero == null && viaje.pasajeroId != 0) {
+          _cargarDatosUsuario(viaje.pasajeroId.toString());
+        } else if (!_isTaxista && viaje.taxista == null && viaje.taxistaId != null) {
+          _cargarDatosUsuario(viaje.taxistaId.toString());
+        }
+      }
 
       setState(() {
         _viajes = viajes;
@@ -107,6 +133,42 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
     }
   }
 
+  Future<void> _cargarDatosUsuario(String userId) async {
+    if (_usuariosCache.containsKey(userId)) {
+      return; // Ya está en caché
+    }
+
+    try {
+      final usuario = await _pasajeroService.obtenerUsuarioPorId(userId);
+      if (usuario != null) {
+        setState(() {
+          _usuariosCache[userId] = usuario;
+        });
+      }
+    } catch (e) {
+      print('Error al cargar datos del usuario $userId: $e');
+    }
+  }
+
+  UserModel? _obtenerDatosUsuario(ViajeModel viaje) {
+    if (_isTaxista) {
+      // Si es taxista, mostrar datos del pasajero
+      if (viaje.pasajero != null) {
+        return viaje.pasajero;
+      }
+      return _usuariosCache[viaje.pasajeroId.toString()];
+    } else {
+      // Si es pasajero, mostrar datos del taxista
+      if (viaje.taxista != null) {
+        return viaje.taxista;
+      }
+      if (viaje.taxistaId != null) {
+        return _usuariosCache[viaje.taxistaId.toString()];
+      }
+    }
+    return null;
+  }
+
   String _formatearFecha(DateTime fecha) {
     final dia = fecha.day.toString().padLeft(2, '0');
     final mes = fecha.month.toString().padLeft(2, '0');
@@ -155,6 +217,8 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                     itemCount: _viajes.length,
                     itemBuilder: (context, index) {
                       final viaje = _viajes[index];
+                      final usuarioData = _obtenerDatosUsuario(viaje);
+                      
                       return Card(
                         color: AppColors.primaryDark.withOpacity(0.3),
                         margin: EdgeInsets.only(bottom: 12),
@@ -211,7 +275,51 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                                       ),
                                   ],
                                 ),
-                                SizedBox(height: 12),
+                                // Información del pasajero/taxista si está disponible
+                                if (usuarioData != null) ...[
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: _isTaxista 
+                                            ? AppColors.primaryDark 
+                                            : AppColors.primaryYellow,
+                                        radius: 16,
+                                        child: Icon(
+                                          Icons.person,
+                                          size: 16,
+                                          color: AppColors.white,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              usuarioData.nombreCompleto,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.white,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            if (usuarioData.telefono != null) ...[
+                                              SizedBox(height: 2),
+                                              Text(
+                                                usuarioData.telefono!,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors.mediumGrey,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 12),
+                                ],
                                 Row(
                                   children: [
                                     Icon(Icons.location_on,

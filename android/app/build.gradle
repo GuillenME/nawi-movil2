@@ -5,8 +5,14 @@ plugins {
     id "com.google.gms.google-services"
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace "com.example.nawii"
+    namespace "com.ocosingo.nawi"
     compileSdk 35
 
     compileOptions {
@@ -14,12 +20,22 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+
+
     kotlinOptions {
         jvmTarget = "17"
     }
 
     defaultConfig {
-        applicationId "com.example.nawii"
+        applicationId "com.ocosingo.nawi"
         minSdkVersion flutter.minSdkVersion
         targetSdk 35
         versionCode 1
@@ -28,8 +44,10 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
-        }
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
+    }
     }
 }
 

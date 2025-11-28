@@ -9,8 +9,9 @@ class PlacesAutocompleteField extends StatefulWidget {
   final IconData? prefixIcon;
   final Color? prefixIconColor;
   final InputDecoration? decoration;
-  final Function(String placeId, String description)? onPlaceSelected;
+  final Function(String placeId, String description, double? lat, double? lng)? onPlaceSelected;
   final String apiKey;
+  final TextStyle? style;
 
   const PlacesAutocompleteField({
     Key? key,
@@ -21,6 +22,7 @@ class PlacesAutocompleteField extends StatefulWidget {
     this.decoration,
     this.onPlaceSelected,
     required this.apiKey,
+    this.style,
   }) : super(key: key);
 
   @override
@@ -71,33 +73,63 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
 
   Future<void> _searchPlaces(String input) async {
     try {
+      // ⭐ ACTUALIZADO: Restringir búsqueda a Ocosingo, Chiapas
+      // Coordenadas del centro de Ocosingo para location bias
+      const double ocosingoLat = 16.9064;
+      const double ocosingoLng = -92.0937;
+      const int radius = 10000; // 10 km de radio desde el centro de Ocosingo
+      
+      // ⭐ CORREGIDO: Formato correcto de components (usar & para separar, no |)
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/autocomplete/json'
         '?input=${Uri.encodeComponent(input)}'
         '&key=${widget.apiKey}'
         '&components=country:mx'
+        '&location=$ocosingoLat,$ocosingoLng'
+        '&radius=$radius'
         '&language=es',
       );
 
+      print('🔍 Buscando lugares: $input');
+      print('🌐 URL: $url');
+
       final response = await http.get(url);
+      
+      print('📡 Status Code: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('📦 Status de API: ${data['status']}');
+        
         if (data['status'] == 'OK' && data['predictions'] != null) {
+          print('✅ Encontrados ${data['predictions'].length} resultados');
           setState(() {
             _predictions = List<Map<String, dynamic>>.from(data['predictions']);
             _showSuggestions = true;
           });
           _showOverlay();
         } else {
+          print('⚠️  No se encontraron resultados o error: ${data['status']}');
+          if (data['error_message'] != null) {
+            print('❌ Error: ${data['error_message']}');
+          }
           setState(() {
             _predictions = [];
             _showSuggestions = false;
           });
           _removeOverlay();
         }
+      } else {
+        print('❌ Error HTTP: ${response.statusCode}');
+        print('📦 Response: ${response.body}');
       }
     } catch (e) {
-      print('Error al buscar lugares: $e');
+      print('❌ Error al buscar lugares: $e');
+      setState(() {
+        _predictions = [];
+        _showSuggestions = false;
+      });
+      _removeOverlay();
     }
   }
 
@@ -117,13 +149,17 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
         if (data['status'] == 'OK' && data['result'] != null) {
           final result = data['result'];
           final address = result['formatted_address'] as String;
+          final geometry = result['geometry'];
+          final location = geometry['location'];
+          final lat = location['lat']?.toDouble();
+          final lng = location['lng']?.toDouble();
           
           widget.controller.text = address;
           _removeOverlay();
           _focusNode.unfocus();
 
           if (widget.onPlaceSelected != null) {
-            widget.onPlaceSelected!(placeId, address);
+            widget.onPlaceSelected!(placeId, address, lat, lng);
           }
         }
       }
@@ -198,6 +234,7 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
       child: TextField(
         controller: widget.controller,
         focusNode: _focusNode,
+        style: widget.style,
         decoration: widget.decoration ??
             InputDecoration(
               hintText: widget.hintText,

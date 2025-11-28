@@ -210,9 +210,12 @@ class _SolicitarViajePageState extends State<SolicitarViajePage> {
                         filled: true,
                         fillColor: Colors.white,
                       ),
-                      onPlaceSelected: (placeId, description) {
+                      onPlaceSelected: (placeId, description, lat, lng) {
                         // El lugar ya está seleccionado y el texto ya está en el controller
                         print('Lugar seleccionado: $description');
+                        if (lat != null && lng != null) {
+                          print('Coordenadas: $lat, $lng');
+                        }
                       },
                     ),
                   ],

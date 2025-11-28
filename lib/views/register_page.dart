@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/utils/validators.dart';
 import 'package:nawii/utils/app_colors.dart';
+import 'package:nawii/utils/message_dialog.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -61,19 +62,19 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message']),
-          backgroundColor: AppColors.successColor,
-        ),
+      MessageDialog.showSuccess(
+        context,
+        result['message'],
+        title: 'Registro Exitoso',
+        onClose: () {
+          Navigator.pop(context); // Volver al login
+        },
       );
-      Navigator.pop(context); // Volver al login
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message']),
-          backgroundColor: AppColors.errorColor,
-        ),
+      MessageDialog.showError(
+        context,
+        result['message'],
+        title: 'Error de Registro',
       );
     }
   }

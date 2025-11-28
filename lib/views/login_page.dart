@@ -5,6 +5,7 @@ import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/register_page.dart';
 import 'package:nawii/views/forgot_password_page.dart';
 import 'package:nawii/views/home_page.dart';
+import 'package:nawii/utils/message_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -47,11 +48,10 @@ class _LoginPageState extends State<LoginPage> {
         MaterialPageRoute(builder: (context) => HomePage()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message']),
-          backgroundColor: AppColors.errorColor,
-        ),
+      MessageDialog.showError(
+        context,
+        result['message'],
+        title: 'Error de Inicio de Sesión',
       );
     }
   }
@@ -96,7 +96,8 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
-                    prefixIcon: Icon(Icons.email, color: AppColors.primaryYellow),
+                    prefixIcon:
+                        Icon(Icons.email, color: AppColors.primaryYellow),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: AppColors.mediumGrey),
@@ -107,7 +108,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.primaryDark.withOpacity(0.5),
@@ -124,7 +126,8 @@ class _LoginPageState extends State<LoginPage> {
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
-                    prefixIcon: Icon(Icons.lock, color: AppColors.primaryYellow),
+                    prefixIcon:
+                        Icon(Icons.lock, color: AppColors.primaryYellow),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -148,7 +151,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+                      borderSide:
+                          BorderSide(color: AppColors.primaryYellow, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.primaryDark.withOpacity(0.5),

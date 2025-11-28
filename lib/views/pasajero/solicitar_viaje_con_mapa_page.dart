@@ -4,10 +4,12 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/pasajero_service.dart';
+import 'package:nawii/services/session_service.dart';
 import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/models/viaje_model.dart';
 import 'package:nawii/models/user_model.dart';
 import 'package:nawii/utils/app_colors.dart';
+import 'package:nawii/utils/message_dialog.dart';
 import 'package:nawii/views/pasajero/viaje_en_curso_page.dart';
 import 'package:nawii/widgets/places_autocomplete_field.dart';
 
@@ -35,6 +37,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
   bool _isLoading = true;
   bool _isSolicitandoViaje = false;
   StreamSubscription? _viajeSubscription;
+  Map<String, UserModel> _taxistasCache = {};
 
   @override
   void initState() {
@@ -57,11 +60,10 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       if (!hasPermission) {
         hasPermission = await LocationServiceSimple.requestLocationPermission();
         if (!hasPermission) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Se necesitan permisos de ubicación'),
-              backgroundColor: AppColors.errorColor,
-            ),
+          MessageDialog.showError(
+            context,
+            'Se necesitan permisos de ubicación para usar esta función',
+            title: 'Permisos Requeridos',
           );
           setState(() => _isLoading = false);
           return;
@@ -77,11 +79,10 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       _actualizarMapa();
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al obtener ubicación: $e'),
-          backgroundColor: AppColors.errorColor,
-        ),
+      MessageDialog.showError(
+        context,
+        'Error al obtener ubicación: $e',
+        title: 'Error de Ubicación',
       );
     }
   }
@@ -112,6 +113,9 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
     // Marcadores de taxistas
     for (var taxista in _taxisDisponibles) {
       final isSelected = _taxistaSeleccionado?['id'] == taxista['id'];
+      final taxistaNombre = _taxistasCache.containsKey(taxista['id'])
+          ? _taxistasCache[taxista['id']]!.nombreCompleto
+          : 'Taxista ${taxista['id'].substring(0, 8)}...';
       markers.add(Marker(
         markerId: MarkerId('taxista_${taxista['id']}'),
         position: LatLng(taxista['latitude'], taxista['longitude']),
@@ -119,7 +123,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
           isSelected ? BitmapDescriptor.hueGreen : BitmapDescriptor.hueYellow,
         ),
         infoWindow: InfoWindow(
-          title: 'Taxista ${taxista['id'].substring(0, 8)}...',
+          title: taxistaNombre,
           snippet: 'Toca para seleccionar',
         ),
         onTap: () => _seleccionarTaxista(taxista),
@@ -173,7 +177,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
   }
 
   void _escucharTaxis() {
-    taxisRef.onValue.listen((event) {
+    taxisRef.onValue.listen((event) async {
       Map<dynamic, dynamic>? taxis = event.snapshot.value as Map?;
       List<Map<String, dynamic>> taxisList = [];
 
@@ -194,8 +198,29 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
         _taxisDisponibles = taxisList;
       });
       
+      // Cargar datos completos de los taxistas
+      for (var taxista in taxisList) {
+        if (!_taxistasCache.containsKey(taxista['id'])) {
+          _cargarDatosTaxista(taxista['id']);
+        }
+      }
+      
       _actualizarMapa();
     });
+  }
+
+  Future<void> _cargarDatosTaxista(String taxistaId) async {
+    try {
+      final taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxistaId);
+      if (taxistaData != null) {
+        setState(() {
+          _taxistasCache[taxistaId] = taxistaData;
+        });
+        _actualizarMapa(); // Actualizar mapa para mostrar el nombre
+      }
+    } catch (e) {
+      print('Error al cargar datos del taxista $taxistaId: $e');
+    }
   }
 
   void _seleccionarTaxista(Map<String, dynamic> taxista) {
@@ -216,12 +241,19 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       taxista['longitude'],
     );
 
-    // Obtener datos completos del taxista
-    UserModel? taxistaData;
-    try {
-      taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxista['id']);
-    } catch (e) {
-      print('Error al obtener datos del taxista: $e');
+    // Obtener datos completos del taxista (usar caché si está disponible)
+    UserModel? taxistaData = _taxistasCache[taxista['id']];
+    if (taxistaData == null) {
+      try {
+        taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxista['id']);
+        if (taxistaData != null) {
+          setState(() {
+            _taxistasCache[taxista['id']] = taxistaData!;
+          });
+        }
+      } catch (e) {
+        print('Error al obtener datos del taxista: $e');
+      }
     }
 
     showModalBottomSheet(
@@ -325,11 +357,10 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
 
   Future<void> _confirmarDestino() async {
     if (_destinoController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Por favor ingresa un destino'),
-          backgroundColor: AppColors.primaryYellow,
-        ),
+      MessageDialog.showWarning(
+        context,
+        'Por favor ingresa un destino',
+        title: 'Destino Requerido',
       );
       return;
     }
@@ -361,42 +392,37 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
         ),
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Destino confirmado: ${_destinoController.text}'),
-          backgroundColor: AppColors.successColor,
-          duration: Duration(seconds: 2),
-        ),
+      // Mensaje de éxito con diálogo modal
+      MessageDialog.showSuccess(
+        context,
+        'Destino confirmado: ${_destinoController.text}',
+        title: 'Destino Confirmado',
       );
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: No se pudo encontrar la ubicación. Intenta con una dirección más específica.'),
-          backgroundColor: AppColors.errorColor,
-          duration: Duration(seconds: 4),
-        ),
+      MessageDialog.showError(
+        context,
+        'No se pudo encontrar la ubicación. Intenta con una dirección más específica.',
+        title: 'Error de Ubicación',
       );
     }
   }
 
   Future<void> _solicitarViaje() async {
     if (_destino == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Por favor confirma el destino primero'),
-          backgroundColor: AppColors.primaryYellow,
-        ),
+      MessageDialog.showWarning(
+        context,
+        'Por favor confirma el destino primero',
+        title: 'Destino Requerido',
       );
       return;
     }
 
     if (_taxistaSeleccionado == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Por favor selecciona un taxista del mapa'),
-          backgroundColor: AppColors.primaryYellow,
-        ),
+      MessageDialog.showWarning(
+        context,
+        'Por favor selecciona un taxista del mapa',
+        title: 'Taxista Requerido',
       );
       return;
     }
@@ -412,34 +438,37 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
         idTaxista: _taxistaSeleccionado!['id'],
       );
 
+      // Verificar si la sesión expiró
+      final sessionHandled = await SessionService.handleServiceResult(context, result);
+      if (sessionHandled) {
+        setState(() => _isSolicitandoViaje = false);
+        return;
+      }
+
       if (result['success']) {
         final viaje = result['viaje'] as ViajeModel?;
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Solicitud enviada. Esperando respuesta del taxista...'),
-            backgroundColor: AppColors.primaryDark,
-            duration: Duration(seconds: 3),
-          ),
+        MessageDialog.showInfo(
+          context,
+          'Solicitud enviada. Esperando respuesta del taxista...',
+          title: 'Solicitud Enviada',
         );
 
         // Escuchar cambios en el estado del viaje
         _escucharEstadoViaje(viaje?.id ?? '');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Error al solicitar viaje'),
-            backgroundColor: AppColors.errorColor,
-          ),
+        MessageDialog.showError(
+          context,
+          result['message'] ?? 'Error al solicitar viaje',
+          title: 'Error',
         );
         setState(() => _isSolicitandoViaje = false);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al solicitar viaje: $e'),
-          backgroundColor: AppColors.errorColor,
-        ),
+      MessageDialog.showError(
+        context,
+        'Error al solicitar viaje: $e',
+        title: 'Error',
       );
       setState(() => _isSolicitandoViaje = false);
     }
@@ -468,11 +497,10 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
             ),
           );
         } else if (estado == 'rechazado') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('El taxista rechazó el viaje. Selecciona otro taxista.'),
-              backgroundColor: AppColors.primaryYellow,
-            ),
+          MessageDialog.showWarning(
+            context,
+            'El taxista rechazó el viaje. Selecciona otro taxista.',
+            title: 'Viaje Rechazado',
           );
           setState(() {
             _isSolicitandoViaje = false;
@@ -510,6 +538,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                           prefixIcon: Icons.flag,
                           prefixIconColor: AppColors.errorColor,
                           apiKey: 'AIzaSyCaZFeEmON_iOVCBO24V1FmQu0pQ2QrxhU',
+                          style: TextStyle(color: AppColors.white),
                           decoration: InputDecoration(
                             hintText: 'Ingresa tu destino',
                             hintStyle: TextStyle(color: AppColors.mediumGrey),
@@ -529,11 +558,29 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                             filled: true,
                             fillColor: AppColors.primaryDark.withOpacity(0.7),
                           ),
-                          onPlaceSelected: (placeId, description) {
-                            // El lugar ya está seleccionado y el texto ya está en el controller
+                          onPlaceSelected: (placeId, description, lat, lng) {
+                            // ⭐ NUEVO: Usar coordenadas directamente del lugar seleccionado
                             print('Lugar seleccionado: $description');
-                            // Confirmar automáticamente el destino
-                            _confirmarDestino();
+                            if (lat != null && lng != null) {
+                              setState(() {
+                                _destino = {
+                                  'latitude': lat,
+                                  'longitude': lng,
+                                };
+                              });
+                              // Actualizar marcadores en el mapa
+                              _actualizarMapa();
+                              // Mover la cámara al destino
+                              _mapController?.animateCamera(
+                                CameraUpdate.newLatLngZoom(
+                                  LatLng(lat, lng),
+                                  15.0,
+                                ),
+                              );
+                            } else {
+                              // Si no hay coordenadas, usar geocoding como fallback
+                              _confirmarDestino();
+                            }
                           },
                         ),
                       ),
@@ -656,9 +703,24 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                       ),
                                     ),
                                     Text(
-                                      'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
+                                      _taxistasCache.containsKey(_taxistaSeleccionado!['id'])
+                                          ? _taxistasCache[_taxistaSeleccionado!['id']]!.nombreCompleto
+                                          : 'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
                                       style: TextStyle(fontSize: 12, color: AppColors.mediumGrey),
                                     ),
+                                    if (_taxistasCache.containsKey(_taxistaSeleccionado!['id'])) ...[
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.phone, size: 12, color: AppColors.mediumGrey),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            _taxistasCache[_taxistaSeleccionado!['id']]!.telefono ?? 'Sin teléfono',
+                                            style: TextStyle(fontSize: 11, color: AppColors.mediumGrey),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),

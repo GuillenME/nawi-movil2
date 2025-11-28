@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/pasajero_service.dart';
+import 'package:nawii/services/session_service.dart';
+import 'package:nawii/models/user_model.dart';
 
 class SeleccionarTaxistaPage extends StatefulWidget {
   final Map<String, double> origen;
@@ -27,6 +29,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
   List<Map<String, dynamic>> _taxisDisponibles = [];
   Map<String, dynamic>? _taxistaSeleccionado;
   bool _isSolicitandoViaje = false;
+  Map<String, UserModel> _taxistasCache = {};
 
   @override
   void initState() {
@@ -35,7 +38,7 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
   }
 
   void _escucharTaxis() {
-    taxisRef.onValue.listen((event) {
+    taxisRef.onValue.listen((event) async {
       Map<dynamic, dynamic>? taxis = event.snapshot.value as Map?;
       List<Map<String, dynamic>> taxisList = [];
 
@@ -55,7 +58,27 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
       setState(() {
         _taxisDisponibles = taxisList;
       });
+
+      // Cargar datos completos de los taxistas
+      for (var taxista in taxisList) {
+        if (!_taxistasCache.containsKey(taxista['id'])) {
+          _cargarDatosTaxista(taxista['id']);
+        }
+      }
     });
+  }
+
+  Future<void> _cargarDatosTaxista(String taxistaId) async {
+    try {
+      final taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxistaId);
+      if (taxistaData != null) {
+        setState(() {
+          _taxistasCache[taxistaId] = taxistaData;
+        });
+      }
+    } catch (e) {
+      print('Error al cargar datos del taxista $taxistaId: $e');
+    }
   }
 
   void _seleccionarTaxista(Map<String, dynamic> taxista) {
@@ -86,6 +109,15 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
         destinoLat: widget.destino['latitude']!,
         destinoLon: widget.destino['longitude']!,
       );
+
+      // Verificar si la sesión expiró
+      final sessionHandled = await SessionService.handleServiceResult(context, result);
+      if (sessionHandled) {
+        setState(() {
+          _isSolicitandoViaje = false;
+        });
+        return;
+      }
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -226,7 +258,9 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                             ),
                           ),
                           title: Text(
-                            'Taxista ${taxista['id'].substring(0, 8)}...',
+                            _taxistasCache.containsKey(taxista['id'])
+                                ? _taxistasCache[taxista['id']]!.nombreCompleto
+                                : 'Taxista ${taxista['id'].substring(0, 8)}...',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color:
@@ -286,10 +320,45 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                     children: [
                       Icon(Icons.person, color: Colors.blue[700]),
                       SizedBox(width: 8),
-                      Text(
-                          'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...'),
+                      Expanded(
+                        child: Text(
+                          _taxistasCache.containsKey(_taxistaSeleccionado!['id'])
+                              ? _taxistasCache[_taxistaSeleccionado!['id']]!.nombreCompleto
+                              : 'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
                     ],
                   ),
+                  if (_taxistasCache.containsKey(_taxistaSeleccionado!['id'])) ...[
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.phone, color: Colors.blue[700], size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          _taxistasCache[_taxistaSeleccionado!['id']]!.telefono ?? 'Sin teléfono',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    if (_taxistasCache[_taxistaSeleccionado!['id']]!.email.isNotEmpty) ...[
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.email, color: Colors.blue[700], size: 16),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _taxistasCache[_taxistaSeleccionado!['id']]!.email,
+                              style: TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                   SizedBox(height: 4),
                   Row(
                     children: [

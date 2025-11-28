@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:nawii/services/location_service_simple.dart';
+import 'package:nawii/services/pasajero_service.dart';
+import 'package:nawii/models/user_model.dart';
 
 class MapaPage extends StatefulWidget {
   @override
@@ -9,12 +11,14 @@ class MapaPage extends StatefulWidget {
 
 class _MapaPageState extends State<MapaPage> {
   final DatabaseReference taxisRef = FirebaseDatabase.instance.ref('taxis');
+  final PasajeroService _pasajeroService = PasajeroService();
   List<Map<String, dynamic>> _taxisDisponibles = [];
   Map<String, double> _userLocation = {
     'latitude': 16.867,
     'longitude': -92.094
   }; // Ocosingo
   bool _isLoading = true;
+  Map<String, UserModel> _taxistasCache = {};
 
   @override
   void initState() {
@@ -60,7 +64,7 @@ class _MapaPageState extends State<MapaPage> {
   }
 
   void _escucharTaxis() {
-    taxisRef.onValue.listen((event) {
+    taxisRef.onValue.listen((event) async {
       Map<dynamic, dynamic>? taxis = event.snapshot.value as Map?;
       List<Map<String, dynamic>> taxisList = [];
 
@@ -80,7 +84,27 @@ class _MapaPageState extends State<MapaPage> {
       setState(() {
         _taxisDisponibles = taxisList;
       });
+
+      // Cargar datos completos de los taxistas
+      for (var taxista in taxisList) {
+        if (!_taxistasCache.containsKey(taxista['id'])) {
+          _cargarDatosTaxista(taxista['id']);
+        }
+      }
     });
+  }
+
+  Future<void> _cargarDatosTaxista(String taxistaId) async {
+    try {
+      final taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxistaId);
+      if (taxistaData != null) {
+        setState(() {
+          _taxistasCache[taxistaId] = taxistaData;
+        });
+      }
+    } catch (e) {
+      print('Error al cargar datos del taxista $taxistaId: $e');
+    }
   }
 
   double _calcularDistancia(Map<String, dynamic> taxista) {
@@ -187,7 +211,9 @@ class _MapaPageState extends State<MapaPage> {
                                   ),
                                 ),
                                 title: Text(
-                                  'Taxista ${taxista['id'].substring(0, 8)}...',
+                                  _taxistasCache.containsKey(taxista['id'])
+                                      ? _taxistasCache[taxista['id']]!.nombreCompleto
+                                      : 'Taxista ${taxista['id'].substring(0, 8)}...',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Column(
@@ -227,10 +253,12 @@ class _MapaPageState extends State<MapaPage> {
                                   ],
                                 ),
                                 onTap: () {
+                                  final nombreTaxista = _taxistasCache.containsKey(taxista['id'])
+                                      ? _taxistasCache[taxista['id']]!.nombreCompleto
+                                      : 'Taxista ${taxista['id'].substring(0, 8)}...';
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(
-                                          'Taxista seleccionado: ${taxista['id'].substring(0, 8)}...'),
+                                      content: Text('Taxista seleccionado: $nombreTaxista'),
                                       backgroundColor: Colors.blue[700],
                                     ),
                                   );
