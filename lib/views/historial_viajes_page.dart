@@ -6,6 +6,8 @@ import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/services/session_service.dart';
 import 'package:nawii/utils/app_colors.dart';
+import 'package:nawii/utils/date_formatter.dart';
+import 'package:nawii/views/calificar_viaje_page.dart';
 
 class HistorialViajesPage extends StatefulWidget {
   @override
@@ -170,12 +172,7 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
   }
 
   String _formatearFecha(DateTime fecha) {
-    final dia = fecha.day.toString().padLeft(2, '0');
-    final mes = fecha.month.toString().padLeft(2, '0');
-    final anio = fecha.year.toString();
-    final hora = fecha.hour.toString().padLeft(2, '0');
-    final minuto = fecha.minute.toString().padLeft(2, '0');
-    return '$dia/$mes/$anio $hora:$minuto';
+    return DateFormatter.formatearFechaConHora(fecha);
   }
 
   @override
@@ -379,6 +376,44 @@ class _HistorialViajesPageState extends State<HistorialViajesPage> {
                                           size: 16, color: AppColors.mediumGrey),
                                   ],
                                 ),
+                                // Botón para calificar si el viaje está completado y no tiene calificación
+                                if (viaje.estado == 'completado' && 
+                                    viaje.calificacion == null && 
+                                    !_isTaxista) ...[
+                                  SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        final taxistaNombre = usuarioData?.nombreCompleto ?? 
+                                            (_isTaxista 
+                                                ? 'Pasajero ${viaje.pasajeroId}' 
+                                                : 'Taxista ${viaje.taxistaId ?? "N/A"}');
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => CalificarViajePage(
+                                              viajeId: viaje.id,
+                                              taxistaNombre: taxistaNombre,
+                                            ),
+                                          ),
+                                        ).then((calificado) {
+                                          if (calificado == true) {
+                                            // Recargar viajes para mostrar la nueva calificación
+                                            _cargarViajes();
+                                          }
+                                        });
+                                      },
+                                      icon: Icon(Icons.star, size: 18),
+                                      label: Text('Calificar Viaje'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primaryYellow,
+                                        foregroundColor: AppColors.primaryDark,
+                                        padding: EdgeInsets.symmetric(vertical: 12),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

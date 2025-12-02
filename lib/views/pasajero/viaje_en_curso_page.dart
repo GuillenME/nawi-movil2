@@ -6,7 +6,9 @@ import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/services/pasajero_service.dart';
 import 'package:nawii/services/session_service.dart';
 import 'package:nawii/utils/message_dialog.dart';
+import 'package:nawii/utils/tarifa_estimada.dart';
 import 'package:nawii/models/user_model.dart';
+import 'package:nawii/models/viaje_model.dart';
 import 'package:nawii/views/calificar_viaje_page.dart';
 
 class ViajeEnCursoPage extends StatefulWidget {
@@ -46,14 +48,39 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
   String _estadoViaje = 'aceptado';
   bool _isCompletado = false;
   UserModel? _taxistaData;
+  double? _tarifa; // Tarifa del viaje
 
   @override
   void initState() {
     super.initState();
     _cargarDatosTaxista();
+    _cargarInformacionViaje();
     _inicializarMapa();
     _escucharEstadoViaje();
     _escucharUbicacionTaxista();
+  }
+
+  Future<void> _cargarInformacionViaje() async {
+    try {
+      // Obtener información del viaje desde el backend para obtener la tarifa
+      final viajes = await _pasajeroService.obtenerMisViajes();
+      if (viajes['success'] == true) {
+        final listaViajes = viajes['viajes'] as List<ViajeModel>;
+        try {
+          final viajeActual = listaViajes.firstWhere(
+            (v) => v.id == widget.viajeId,
+          );
+          setState(() {
+            _tarifa = viajeActual.tarifa;
+          });
+        } catch (e) {
+          // No se encontró el viaje en la lista, intentar obtener desde Firebase
+          print('Viaje no encontrado en la lista, intentando desde Firebase');
+        }
+      }
+    } catch (e) {
+      print('Error al cargar información del viaje: $e');
+    }
   }
 
   Future<void> _cargarDatosTaxista() async {
@@ -113,16 +140,42 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
         rotation: 45.0, // Simular dirección del vehículo
       ));
 
-      // Polilínea del taxista al destino
-      polylines.add(Polyline(
-        polylineId: PolylineId('ruta'),
-        points: [
-          LatLng(_ubicacionTaxista!['latitude']!, _ubicacionTaxista!['longitude']!),
-          LatLng(widget.destinoLat, widget.destinoLon),
-        ],
-        color: Colors.blue,
-        width: 4,
-      ));
+      // Polilíneas según el estado del viaje
+      if (_estadoViaje == 'aceptado') {
+        // Ruta 1: Del taxista al origen (donde está el pasajero)
+        polylines.add(Polyline(
+          polylineId: PolylineId('ruta_taxista_origen'),
+          points: [
+            LatLng(_ubicacionTaxista!['latitude']!, _ubicacionTaxista!['longitude']!),
+            LatLng(widget.origenLat, widget.origenLon),
+          ],
+          color: Colors.blue,
+          width: 4,
+        ));
+        
+        // Ruta 2: Del origen al destino (ruta completa del viaje)
+        polylines.add(Polyline(
+          polylineId: PolylineId('ruta_origen_destino'),
+          points: [
+            LatLng(widget.origenLat, widget.origenLon),
+            LatLng(widget.destinoLat, widget.destinoLon),
+          ],
+          color: Colors.orange,
+          width: 4,
+          patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+        ));
+      } else if (_estadoViaje == 'en_progreso') {
+        // Cuando el viaje está en progreso: solo del taxista al destino
+        polylines.add(Polyline(
+          polylineId: PolylineId('ruta'),
+          points: [
+            LatLng(_ubicacionTaxista!['latitude']!, _ubicacionTaxista!['longitude']!),
+            LatLng(widget.destinoLat, widget.destinoLon),
+          ],
+          color: Colors.blue,
+          width: 4,
+        ));
+      }
     } else {
       // Polilínea de origen a destino si no hay ubicación del taxista
       polylines.add(Polyline(
@@ -141,27 +194,38 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
       _polylines = polylines;
     });
 
-    // Ajustar cámara
+    // Ajustar cámara para incluir todos los puntos relevantes
     if (_ubicacionTaxista != null) {
+      // Calcular los límites incluyendo: taxista, origen y destino
+      final latMin = [
+        _ubicacionTaxista!['latitude']!,
+        widget.origenLat,
+        widget.destinoLat,
+      ].reduce((a, b) => a < b ? a : b);
+      
+      final latMax = [
+        _ubicacionTaxista!['latitude']!,
+        widget.origenLat,
+        widget.destinoLat,
+      ].reduce((a, b) => a > b ? a : b);
+      
+      final lonMin = [
+        _ubicacionTaxista!['longitude']!,
+        widget.origenLon,
+        widget.destinoLon,
+      ].reduce((a, b) => a < b ? a : b);
+      
+      final lonMax = [
+        _ubicacionTaxista!['longitude']!,
+        widget.origenLon,
+        widget.destinoLon,
+      ].reduce((a, b) => a > b ? a : b);
+      
       _mapController!.animateCamera(
         CameraUpdate.newLatLngBounds(
           LatLngBounds(
-            southwest: LatLng(
-              _ubicacionTaxista!['latitude']! < widget.destinoLat
-                  ? _ubicacionTaxista!['latitude']!
-                  : widget.destinoLat,
-              _ubicacionTaxista!['longitude']! < widget.destinoLon
-                  ? _ubicacionTaxista!['longitude']!
-                  : widget.destinoLon,
-            ),
-            northeast: LatLng(
-              _ubicacionTaxista!['latitude']! > widget.destinoLat
-                  ? _ubicacionTaxista!['latitude']!
-                  : widget.destinoLat,
-              _ubicacionTaxista!['longitude']! > widget.destinoLon
-                  ? _ubicacionTaxista!['longitude']!
-                  : widget.destinoLon,
-            ),
+            southwest: LatLng(latMin, lonMin),
+            northeast: LatLng(latMax, lonMax),
           ),
           100.0,
         ),
@@ -184,10 +248,17 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
       if (event.snapshot.exists) {
         final data = Map<String, dynamic>.from(event.snapshot.value as Map);
         final estado = data['estado'] as String?;
+        final tarifa = data['tarifa']?.toDouble();
 
         setState(() {
           _estadoViaje = estado ?? 'aceptado';
+          if (tarifa != null) {
+            _tarifa = tarifa;
+          }
         });
+
+        // Recargar información del viaje desde el backend para obtener la tarifa actualizada
+        _cargarInformacionViaje();
 
         if (estado == 'completado' && !_isCompletado) {
           _isCompletado = true;
@@ -444,6 +515,86 @@ class _ViajeEnCursoPageState extends State<ViajeEnCursoPage> {
                       color: Colors.blue[700],
                     ),
                   ),
+                // Mostrar tarifa real si está establecida, sino mostrar estimada
+                if (_tarifa != null) ...[
+                  SizedBox(height: 8),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.attach_money, color: Colors.green[700], size: 24),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tarifa del viaje',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              'MX\$${_tarifa!.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Mostrar tarifa estimada si no hay tarifa real
+                  SizedBox(height: 8),
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.attach_money, color: Colors.orange[700], size: 24),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tarifa estimada',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              TarifaEstimada.obtenerTextoEstimado(
+                                origenLat: widget.origenLat,
+                                origenLon: widget.origenLon,
+                                destinoLat: widget.destinoLat,
+                                destinoLon: widget.destinoLon,
+                              ),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.orange[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

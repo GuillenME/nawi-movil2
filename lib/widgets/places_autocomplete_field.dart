@@ -9,7 +9,8 @@ class PlacesAutocompleteField extends StatefulWidget {
   final IconData? prefixIcon;
   final Color? prefixIconColor;
   final InputDecoration? decoration;
-  final Function(String placeId, String description, double? lat, double? lng)? onPlaceSelected;
+  final Function(String placeId, String description, double? lat, double? lng)?
+      onPlaceSelected;
   final String apiKey;
   final TextStyle? style;
 
@@ -26,7 +27,8 @@ class PlacesAutocompleteField extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PlacesAutocompleteFieldState createState() => _PlacesAutocompleteFieldState();
+  _PlacesAutocompleteFieldState createState() =>
+      _PlacesAutocompleteFieldState();
 }
 
 class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
@@ -78,7 +80,7 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
       const double ocosingoLat = 16.9064;
       const double ocosingoLng = -92.0937;
       const int radius = 10000; // 10 km de radio desde el centro de Ocosingo
-      
+
       // ⭐ CORREGIDO: Formato correcto de components (usar & para separar, no |)
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/autocomplete/json'
@@ -94,17 +96,24 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
       print('🌐 URL: $url');
 
       final response = await http.get(url);
-      
+
       print('📡 Status Code: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('📦 Status de API: ${data['status']}');
-        
+
         if (data['status'] == 'OK' && data['predictions'] != null) {
           print('✅ Encontrados ${data['predictions'].length} resultados');
+
+          // ⭐ NUEVO: Filtrar y priorizar resultados para evitar lugares incorrectos
+          final predictionsRaw =
+              List<Map<String, dynamic>>.from(data['predictions']);
+          final predictionsFiltradas =
+              _filtrarYPriorizarResultados(predictionsRaw, input);
+
           setState(() {
-            _predictions = List<Map<String, dynamic>>.from(data['predictions']);
+            _predictions = predictionsFiltradas;
             _showSuggestions = true;
           });
           _showOverlay();
@@ -135,25 +144,47 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
 
   Future<void> _getPlaceDetails(String placeId) async {
     try {
+      // ⭐ MEJORADO: Solicitar más campos para obtener información completa del lugar
+      // Incluimos 'name' para verificar el nombre exacto y 'types' para validar que sea una universidad
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/place/details/json'
         '?place_id=$placeId'
         '&key=${widget.apiKey}'
-        '&fields=formatted_address,geometry'
+        '&fields=formatted_address,geometry,name,types,place_id,vicinity'
         '&language=es',
       );
 
+      print('🔍 Obteniendo detalles del lugar con place_id: $placeId');
+      print('🌐 URL: $url');
+
       final response = await http.get(url);
+      print('📡 Status Code: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('📦 Status de API: ${data['status']}');
+
         if (data['status'] == 'OK' && data['result'] != null) {
           final result = data['result'];
           final address = result['formatted_address'] as String;
+          final name = result['name'] as String? ?? 'Sin nombre';
+          final types = List<String>.from(result['types'] ?? []);
           final geometry = result['geometry'];
           final location = geometry['location'];
           final lat = location['lat']?.toDouble();
           final lng = location['lng']?.toDouble();
-          
+
+          print('✅ Lugar encontrado: $name');
+          print('📍 Dirección: $address');
+          print('🏷️  Tipos: ${types.join(", ")}');
+          print('🌍 Coordenadas: $lat, $lng');
+
+          // Verificar si las coordenadas son válidas
+          if (lat == null || lng == null) {
+            print('⚠️  ERROR: Las coordenadas son nulas');
+            throw Exception('No se pudieron obtener las coordenadas del lugar');
+          }
+
           widget.controller.text = address;
           _removeOverlay();
           _focusNode.unfocus();
@@ -161,11 +192,145 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
           if (widget.onPlaceSelected != null) {
             widget.onPlaceSelected!(placeId, address, lat, lng);
           }
+        } else {
+          print('❌ Error en Place Details API: ${data['status']}');
+          if (data['error_message'] != null) {
+            print('❌ Mensaje de error: ${data['error_message']}');
+          }
         }
+      } else {
+        print('❌ Error HTTP: ${response.statusCode}');
+        print('📦 Response: ${response.body}');
       }
     } catch (e) {
-      print('Error al obtener detalles del lugar: $e');
+      print('❌ Error al obtener detalles del lugar: $e');
+      rethrow;
     }
+  }
+
+  // Filtrar y priorizar resultados del autocomplete
+  List<Map<String, dynamic>> _filtrarYPriorizarResultados(
+      List<Map<String, dynamic>> predictions, String busqueda) {
+    final busquedaLower = busqueda.toLowerCase();
+
+    // ⭐ MEJORADO: Detectar búsqueda de universidad incluso con términos cortos
+    // "uni" puede ser el inicio de "universidad", "universitario", etc.
+    final esBusquedaUniversidad = busquedaLower.contains('universidad') ||
+        busquedaLower.contains('tecnológica') ||
+        busquedaLower.contains('tecnologica') ||
+        busquedaLower.contains('uts') ||
+        busquedaLower.startsWith('uni') ||
+        (busquedaLower.length >= 3 && busquedaLower.contains('tec'));
+
+    // ⭐ NUEVO: Siempre aplicar filtrado si hay resultados que mencionan "universidad" o "tecnológica"
+    // incluso si la búsqueda es corta, para evitar resultados incorrectos
+    bool tieneResultadosUniversidad = false;
+    for (var prediction in predictions) {
+      final description = (prediction['description'] as String).toLowerCase();
+      if (description.contains('universidad') ||
+          description.contains('tecnológica') ||
+          description.contains('tecnologica')) {
+        tieneResultadosUniversidad = true;
+        break;
+      }
+    }
+
+    if (!esBusquedaUniversidad && !tieneResultadosUniversidad) {
+      // Si no es búsqueda de universidad y no hay resultados de universidad, devolver sin cambios
+      return predictions;
+    }
+
+    // Lista para almacenar resultados con puntuación
+    List<Map<String, dynamic>> resultadosConPuntuacion = [];
+
+    for (var prediction in predictions) {
+      final description = (prediction['description'] as String).toLowerCase();
+      final structuredFormatting = prediction['structured_formatting'];
+      final mainText = structuredFormatting != null
+          ? (structuredFormatting['main_text'] as String? ?? '').toLowerCase()
+          : '';
+
+      int puntuacion = 0;
+
+      // ❌ PENALIZAR: Si contiene "centrar", "centro", "centro sur", etc.
+      if (description.contains('centrar') ||
+          description.contains('centro sur') ||
+          description.contains('centro norte') ||
+          (description.contains('centro') &&
+              !description.contains('universidad'))) {
+        puntuacion -= 100; // Penalización fuerte
+        print('   ⚠️  Penalizado (contiene centro/centrar): $description');
+      }
+
+      // ✅ PRIORIZAR: Si contiene el nombre completo de la universidad
+      if (description.contains('universidad tecnológica de la selva') ||
+          description.contains('universidad tecnologica de la selva')) {
+        puntuacion += 50;
+        print('   ✅ Bonus (nombre completo): $description');
+      }
+
+      // ✅ PRIORIZAR: Si contiene "camino a tonina" o "lequilum" (ubicación correcta)
+      if (description.contains('camino a tonina') ||
+          description.contains('tonina') ||
+          description.contains('lequilum')) {
+        puntuacion += 40;
+        print('   ✅ Bonus (ubicación correcta): $description');
+      }
+
+      // ✅ PRIORIZAR: Si el texto principal contiene "universidad"
+      if (mainText.contains('universidad')) {
+        puntuacion += 30;
+      }
+
+      // ✅ PRIORIZAR: Si NO contiene palabras genéricas de ubicación
+      if (!description.contains('centrar') &&
+          !description.contains('centro') &&
+          !description.contains('sur') &&
+          !description.contains('norte')) {
+        puntuacion += 10;
+      }
+
+      // ✅ PRIORIZAR: Si tiene tipos específicos (verificar si están disponibles)
+      final types = prediction['types'] as List<dynamic>?;
+      if (types != null) {
+        if (types.contains('university')) {
+          puntuacion += 60;
+          print('   ✅ Bonus (tipo university): $description');
+        }
+        if (types.contains('school')) {
+          puntuacion += 40;
+        }
+      }
+
+      // Agregar puntuación al resultado
+      final resultadoConPuntuacion = Map<String, dynamic>.from(prediction);
+      resultadoConPuntuacion['_puntuacion'] = puntuacion;
+      resultadosConPuntuacion.add(resultadoConPuntuacion);
+
+      print('   📊 Puntuación: $puntuacion - $description');
+    }
+
+    // Ordenar por puntuación (mayor a menor)
+    resultadosConPuntuacion.sort((a, b) {
+      final puntA = a['_puntuacion'] as int;
+      final puntB = b['_puntuacion'] as int;
+      return puntB.compareTo(puntA);
+    });
+
+    // Remover la puntuación temporal antes de devolver
+    final resultadosFinales = resultadosConPuntuacion.map((r) {
+      final resultado = Map<String, dynamic>.from(r);
+      resultado.remove('_puntuacion');
+      return resultado;
+    }).toList();
+
+    print(
+        '✅ Resultados ordenados por prioridad (${resultadosFinales.length} total)');
+    for (var i = 0; i < resultadosFinales.length && i < 3; i++) {
+      print('   ${i + 1}. ${resultadosFinales[i]['description']}');
+    }
+
+    return resultadosFinales;
   }
 
   void _showOverlay() {
@@ -255,4 +420,3 @@ class _PlacesAutocompleteFieldState extends State<PlacesAutocompleteField> {
     );
   }
 }
-

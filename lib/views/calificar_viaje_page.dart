@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nawii/services/pasajero_service.dart';
+import 'package:nawii/services/session_service.dart';
 
 class CalificarViajePage extends StatefulWidget {
   final String viajeId;
@@ -51,36 +52,77 @@ class _CalificarViajePageState extends State<CalificarViajePage> {
             : null,
       );
 
+      // Verificar si la sesión expiró
+      final sessionHandled = await SessionService.handleServiceResult(context, result);
+      if (sessionHandled) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message']),
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(result['message'] ?? 'Calificación enviada exitosamente'),
+                ),
+              ],
+            ),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
           ),
         );
-        Navigator.pop(
-            context, true); // Retorna true para indicar que se calificó
+        
+        // Navegar de vuelta a la página principal
+        // Usar pushReplacement para reemplazar esta página y volver a home
+        Navigator.popUntil(context, (route) => route.isFirst);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message']),
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(result['message'] ?? 'Error al enviar calificación'),
+                ),
+              ],
+            ),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
           ),
         );
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
     } catch (e) {
+      print('❌ Error al enviar calificación: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error al enviar calificación: $e'),
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('Error al enviar calificación: $e'),
+              ),
+            ],
+          ),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
         ),
       );
+      setState(() {
+        _isLoading = false;
+      });
     }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   @override

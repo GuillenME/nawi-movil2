@@ -420,12 +420,25 @@ class PasajeroService {
       final user = await AuthService.getCurrentUser();
       if (user == null) throw Exception('Usuario no autenticado');
 
+      // Obtener el token directamente desde SharedPreferences
+      final tokenRaw = await AuthService.getToken();
+      if (tokenRaw == null || tokenRaw.isEmpty || tokenRaw.trim().isEmpty) {
+        print('❌ ERROR: Token no encontrado en SharedPreferences');
+        throw Exception(
+            'Token de autenticación no encontrado. Por favor inicia sesión nuevamente.');
+      }
+
+      // Limpiar el token (quitar espacios)
+      final token = tokenRaw.trim();
+      print('🔐 Token obtenido: ${token.length} caracteres');
+      print('⭐ Calificando viaje $viajeId con calificación: $calificacion');
+
       final response = await http.post(
         Uri.parse('$baseUrl/pasajero/calificar-viaje/$viajeId'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${user.token}',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'calificacion': calificacion,
@@ -433,7 +446,10 @@ class PasajeroService {
         }),
       );
 
-      if (response.statusCode == 200) {
+      print('📡 Status Code: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           return {
@@ -446,11 +462,25 @@ class PasajeroService {
             'message': data['message'] ?? 'Error al calificar viaje',
           };
         }
-      } else {
+      } else if (response.statusCode == 401) {
         return {
           'success': false,
-          'message': 'Error de conexión: ${response.statusCode}',
+          'session_expired': true,
+          'message': 'Sesión expirada. Por favor inicia sesión nuevamente.',
         };
+      } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': errorData['message'] ?? 'Error de conexión: ${response.statusCode}',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': 'Error de conexión: ${response.statusCode}',
+          };
+        }
       }
     } catch (e) {
       return {
@@ -667,12 +697,15 @@ class PasajeroService {
           final location = mejorResultado!['geometry']['location'];
           final direccionEncontrada =
               mejorResultado['formatted_address'] as String;
+          final latResultado = location['lat'].toDouble();
+          final lngResultado = location['lng'].toDouble();
+          
           print('✅ Ubicación seleccionada: $direccionEncontrada');
-          print('   Coordenadas: ${location['lat']}, ${location['lng']}');
+          print('   Coordenadas: $latResultado, $lngResultado');
 
           return {
-            'lat': location['lat'].toDouble(),
-            'lng': location['lng'].toDouble(),
+            'lat': latResultado,
+            'lng': lngResultado,
           };
         } else if (data['status'] == 'ZERO_RESULTS') {
           throw Exception('No se encontró la dirección: $direccion');

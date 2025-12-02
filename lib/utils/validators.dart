@@ -5,9 +5,14 @@ class Validators {
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
   );
 
-  // Expresión regular para validar teléfono mexicano
+  // Expresión regular para validar teléfono (solo números, exactamente 10 dígitos)
   static final RegExp _phoneRegex = RegExp(
-    r'^(\+52)?[1-9]\d{9}$',
+    r'^\d{10}$',
+  );
+
+  // Expresión regular para validar nombre/apellidos (solo letras, espacios y acentos)
+  static final RegExp _nameRegex = RegExp(
+    r'^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$',
   );
 
   /// Valida un email con expresión regular
@@ -19,6 +24,11 @@ class Validators {
     // Limpiar espacios
     final email = value.trim();
     
+    // Verificar códigos maliciosos
+    if (_containsMaliciousCode(email)) {
+      return 'El correo electrónico no puede contener caracteres o códigos maliciosos';
+    }
+    
     if (!_emailRegex.hasMatch(email)) {
       return 'Por favor ingresa un correo electrónico válido';
     }
@@ -27,17 +37,69 @@ class Validators {
   }
 
   /// Valida una contraseña
+  /// Debe contener: mayúsculas, minúsculas, números y caracteres especiales
   static String? validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor ingresa tu contraseña';
     }
     
-    if (value.length < 6) {
-      return 'La contraseña debe tener al menos 6 caracteres';
+    // Verificar códigos maliciosos (permitir caracteres especiales seguros para contraseñas)
+    final lowerValue = value.toLowerCase();
+    final maliciousPatterns = [
+      'script',
+      'javascript:',
+      'onerror=',
+      'onclick=',
+      'onload=',
+      'onmouseover=',
+      'eval(',
+      'expression(',
+      'vbscript:',
+      'data:text/html',
+      '<iframe',
+      '<object',
+      '<embed',
+      '<?php',
+      '<%',
+    ];
+    
+    for (var pattern in maliciousPatterns) {
+      if (lowerValue.contains(pattern)) {
+        return 'La contraseña no puede contener códigos maliciosos';
+      }
+    }
+    
+    // Verificar que no empiece con caracteres peligrosos
+    if (value.trim().startsWith('<') || value.trim().startsWith('>')) {
+      return 'La contraseña no puede empezar con caracteres peligrosos';
+    }
+    
+    if (value.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
     }
     
     if (value.length > 50) {
       return 'La contraseña no puede tener más de 50 caracteres';
+    }
+
+    // Verificar que contenga al menos una mayúscula
+    if (!value.contains(RegExp(r'[A-Z]'))) {
+      return 'La contraseña debe contener al menos una mayúscula';
+    }
+
+    // Verificar que contenga al menos una minúscula
+    if (!value.contains(RegExp(r'[a-z]'))) {
+      return 'La contraseña debe contener al menos una minúscula';
+    }
+
+    // Verificar que contenga al menos un número
+    if (!value.contains(RegExp(r'[0-9]'))) {
+      return 'La contraseña debe contener al menos un número';
+    }
+
+    // Verificar que contenga al menos un carácter especial
+    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'La contraseña debe contener al menos un carácter especial (!@#\$%^&*(),.?":{}|<>)';
     }
     
     return null;
@@ -56,21 +118,21 @@ class Validators {
     return null;
   }
 
-  /// Valida un teléfono mexicano
+  /// Valida un teléfono (solo números, exactamente 10 dígitos)
   static String? validatePhone(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor ingresa tu teléfono';
     }
     
-    // Limpiar espacios y caracteres especiales
-    final phone = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    // Limpiar espacios y caracteres especiales, dejar solo números
+    final phone = value.replaceAll(RegExp(r'[^\d]'), '');
     
-    if (phone.length < 10 || phone.length > 13) {
-      return 'El teléfono debe tener entre 10 y 13 dígitos';
+    if (phone.length != 10) {
+      return 'El teléfono debe tener exactamente 10 dígitos';
     }
     
     if (!_phoneRegex.hasMatch(phone)) {
-      return 'Por favor ingresa un teléfono válido';
+      return 'El teléfono solo debe contener números';
     }
     
     return null;
@@ -86,6 +148,84 @@ class Validators {
     final sanitized = value.trim();
     if (sanitized.length != value.length) {
       return 'El campo contiene espacios inválidos';
+    }
+    
+    return null;
+  }
+
+  /// Detecta códigos maliciosos en el texto
+  /// Verifica caracteres peligrosos como <, >, script, javascript:, etc.
+  static bool _containsMaliciousCode(String value) {
+    final lowerValue = value.toLowerCase();
+    
+    // Caracteres peligrosos individuales
+    final dangerousChars = ['<', '>', '/', '\\', '&', ';', '`', '\$'];
+    for (var char in dangerousChars) {
+      if (value.contains(char)) {
+        return true;
+      }
+    }
+    
+    // Patrones maliciosos comunes
+    final maliciousPatterns = [
+      'script',
+      'javascript:',
+      'onerror=',
+      'onclick=',
+      'onload=',
+      'onmouseover=',
+      'eval(',
+      'expression(',
+      'vbscript:',
+      'data:text/html',
+      '<iframe',
+      '<object',
+      '<embed',
+      '<?php',
+      '<%',
+      r'${',
+    ];
+    
+    for (var pattern in maliciousPatterns) {
+      if (lowerValue.contains(pattern)) {
+        return true;
+      }
+    }
+    
+    // Verificar si empieza con caracteres peligrosos
+    if (value.trim().startsWith('<') || value.trim().startsWith('>')) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  /// Valida nombre y apellidos (solo letras, espacios y acentos, sin números)
+  static String? validateName(String? value, String fieldName) {
+    if (value == null || value.isEmpty || value.trim().isEmpty) {
+      return 'Por favor ingresa $fieldName';
+    }
+    
+    final trimmed = value.trim();
+    
+    // Verificar códigos maliciosos
+    if (_containsMaliciousCode(trimmed)) {
+      return '$fieldName no puede contener caracteres o códigos maliciosos';
+    }
+    
+    // Verificar que no contenga números
+    if (trimmed.contains(RegExp(r'[0-9]'))) {
+      return '$fieldName no puede contener números';
+    }
+    
+    // Verificar que solo contenga letras, espacios y acentos
+    if (!_nameRegex.hasMatch(trimmed)) {
+      return '$fieldName solo puede contener letras, espacios y acentos';
+    }
+    
+    // Verificar longitud mínima
+    if (trimmed.length < 2) {
+      return '$fieldName debe tener al menos 2 caracteres';
     }
     
     return null;

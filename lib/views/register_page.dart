@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/utils/validators.dart';
 import 'package:nawii/utils/app_colors.dart';
@@ -142,6 +143,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _nombreController,
                   style: TextStyle(color: AppColors.white),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]')),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Nombre',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
@@ -164,7 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
                   validator: (value) =>
-                      Validators.validateRequired(value, 'tu nombre'),
+                      Validators.validateName(value, 'tu nombre'),
                 ),
                 SizedBox(height: 16),
 
@@ -172,6 +176,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 TextFormField(
                   controller: _apellidoController,
                   style: TextStyle(color: AppColors.white),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]')),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Apellido',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
@@ -194,7 +201,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     fillColor: AppColors.primaryDark.withOpacity(0.5),
                   ),
                   validator: (value) =>
-                      Validators.validateRequired(value, 'tu apellido'),
+                      Validators.validateName(value, 'tu apellido'),
                 ),
                 SizedBox(height: 16),
 
@@ -203,6 +210,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: TextStyle(color: AppColors.white),
+                  inputFormatters: [
+                    // Bloquear caracteres peligrosos como <, >, /, \, &, ;, etc.
+                    FilteringTextInputFormatter.deny(RegExp(r'[<>/\\&;`\$]')),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
@@ -231,10 +242,14 @@ class _RegisterPageState extends State<RegisterPage> {
                 // Campo de teléfono
                 TextFormField(
                   controller: _telefonoController,
-                  keyboardType: TextInputType.phone,
+                  keyboardType: TextInputType.number,
                   style: TextStyle(color: AppColors.white),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(10),
+                  ],
                   decoration: InputDecoration(
-                    labelText: 'Teléfono',
+                    labelText: 'Teléfono (10 dígitos)',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
                     prefixIcon:
                         Icon(Icons.phone, color: AppColors.primaryYellow),
@@ -263,6 +278,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   style: TextStyle(color: AppColors.white),
+                  inputFormatters: [
+                    // Bloquear caracteres peligrosos pero permitir caracteres especiales seguros
+                    FilteringTextInputFormatter.deny(RegExp(r'[<>/\\&;`\$]')),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),
@@ -306,6 +325,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
                   style: TextStyle(color: AppColors.white),
+                  inputFormatters: [
+                    // Bloquear caracteres peligrosos pero permitir caracteres especiales seguros
+                    FilteringTextInputFormatter.deny(RegExp(r'[<>/\\&;`\$]')),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Confirmar contraseña',
                     labelStyle: TextStyle(color: AppColors.mediumGrey),

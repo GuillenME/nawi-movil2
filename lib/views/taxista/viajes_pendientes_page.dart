@@ -269,11 +269,13 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
           if (viaje.taxistaId != null) {
             final taxistaIdViaje = viaje.taxistaId.toString();
             final coincide = taxistaIdViaje == _taxistaId;
-            print('   🔍 Viaje ${viaje.id}: taxistaId=$taxistaIdViaje, esperado=$_taxistaId, coincide=$coincide');
+            print(
+                '   🔍 Viaje ${viaje.id}: taxistaId=$taxistaIdViaje, esperado=$_taxistaId, coincide=$coincide');
             return coincide;
           }
           // Si no tiene taxista, está disponible para todos
-          print('   ✅ Viaje ${viaje.id}: Sin taxista asignado, disponible para todos');
+          print(
+              '   ✅ Viaje ${viaje.id}: Sin taxista asignado, disponible para todos');
           return true;
         }).toList();
 
@@ -288,18 +290,24 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
         }).toList();
 
         print('📊 Viajes disponibles desde backend: ${viajesValidos.length}');
-        
+
         // ⭐ NUEVO: Filtrar viajes sin ID válido y mostrar advertencia
-        final viajesConId = viajesValidos.where((v) => v.id.isNotEmpty && v.id != 'null').toList();
-        final viajesSinId = viajesValidos.where((v) => v.id.isEmpty || v.id == 'null').toList();
-        
+        final viajesConId = viajesValidos
+            .where((v) => v.id.isNotEmpty && v.id != 'null')
+            .toList();
+        final viajesSinId =
+            viajesValidos.where((v) => v.id.isEmpty || v.id == 'null').toList();
+
         if (viajesSinId.isNotEmpty) {
-          print('⚠️  ADVERTENCIA: ${viajesSinId.length} viajes sin ID válido del backend');
-          print('   Estos viajes no se pueden aceptar/rechazar hasta que el backend envíe el ID');
+          print(
+              '⚠️  ADVERTENCIA: ${viajesSinId.length} viajes sin ID válido del backend');
+          print(
+              '   Estos viajes no se pueden aceptar/rechazar hasta que el backend envíe el ID');
           // Mostrar mensaje al usuario
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('⚠️ Algunos viajes no tienen ID válido. Verifica que el backend envíe el campo "id" en la respuesta.'),
+              content: Text(
+                  '⚠️ Algunos viajes no tienen ID válido. Verifica que el backend envíe el campo "id" en la respuesta.'),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 5),
             ),
@@ -320,10 +328,12 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
           _viajesPendientes = [...viajesConId, ...viajesFirebase];
           _isLoading = false;
 
-          print('✅ Viajes cargados: ${viajesConId.length} del backend (con ID), ${viajesFirebase.length} de Firebase');
+          print(
+              '✅ Viajes cargados: ${viajesConId.length} del backend (con ID), ${viajesFirebase.length} de Firebase');
           // Verificar direcciones de los viajes del backend
           for (var viaje in viajesConId) {
-            print('   Viaje ${viaje.id}: Origen="${viaje.direccionOrigen}", Destino="${viaje.direccionDestino}"');
+            print(
+                '   Viaje ${viaje.id}: Origen="${viaje.direccionOrigen}", Destino="${viaje.direccionDestino}"');
           }
         });
       } else {
@@ -374,22 +384,33 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
         );
         return;
       }
-      
+
       print('🚕 Intentando aceptar viaje ID: ${viaje.id}');
       print('   Tipo de ID: ${viaje.id.runtimeType}');
       print('   Estado: ${viaje.estado}');
-      print('   Taxista ID actual: $_taxistaId (tipo: ${_taxistaId.runtimeType})');
-      print('   Taxista ID del viaje: ${viaje.taxistaId} (tipo: ${viaje.taxistaId.runtimeType})');
+      print(
+          '   Taxista ID actual: $_taxistaId (tipo: ${_taxistaId.runtimeType})');
+      print(
+          '   Taxista ID del viaje: ${viaje.taxistaId} (tipo: ${viaje.taxistaId.runtimeType})');
       print('   Tiempo límite: ${viaje.tiempoLimiteAceptacion}');
       if (viaje.tiempoLimiteAceptacion != null) {
         final ahora = DateTime.now();
         final limite = viaje.tiempoLimiteAceptacion!;
         final expirado = limite.isBefore(ahora);
-        print('   ⏱️  Tiempo restante: ${limite.difference(ahora).inMinutes} minutos');
+        print(
+            '   ⏱️  Tiempo restante: ${limite.difference(ahora).inMinutes} minutos');
         print('   ⚠️  Expirado: $expirado');
       }
-      
-      final result = await _taxistaService.aceptarViaje(viaje.id);
+
+      // ⭐ NUEVO: Mostrar diálogo para ingresar tarifa
+      final tarifa = await _mostrarDialogoTarifa();
+      if (tarifa == null) {
+        // El usuario canceló el diálogo
+        return;
+      }
+
+      final result =
+          await _taxistaService.aceptarViaje(viaje.id, tarifa: tarifa);
 
       // Verificar si la sesión expiró
       final sessionHandled =
@@ -429,19 +450,20 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
         // ⭐ MEJORADO: Mostrar diálogo con información detallada del error
         String mensaje = result['message'] ?? 'No se pudo aceptar el viaje';
         String mensajeDetallado = result['error_details'] ?? mensaje;
-        
-        bool esExpirado = mensaje.toLowerCase().contains('expirado') || 
-                         mensaje.toLowerCase().contains('tiempo límite') ||
-                         mensaje.toLowerCase().contains('tiempo limite');
-        
+
+        bool esExpirado = mensaje.toLowerCase().contains('expirado') ||
+            mensaje.toLowerCase().contains('tiempo límite') ||
+            mensaje.toLowerCase().contains('tiempo limite');
+
         if (esExpirado) {
-          mensaje = 'Este viaje ya no está disponible. El tiempo límite para aceptarlo ha expirado.';
+          mensaje =
+              'Este viaje ya no está disponible. El tiempo límite para aceptarlo ha expirado.';
           setState(() {
             _viajesPendientes.removeWhere((v) => v.id == viaje.id);
           });
           _cargarViajesPendientes();
         }
-        
+
         // Mostrar diálogo con información detallada
         showDialog(
           context: context,
@@ -464,7 +486,8 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                     Divider(),
                     Text(
                       'Detalles técnicos:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                     SizedBox(height: 4),
                     Text(
@@ -479,8 +502,10 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                   SizedBox(height: 4),
-                  Text('ID: ${viaje.id}', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                  Text('Estado: ${viaje.estado}', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                  Text('ID: ${viaje.id}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                  Text('Estado: ${viaje.estado}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                   if (viaje.tiempoLimiteAceptacion != null) ...[
                     Text(
                       'Tiempo límite: ${viaje.tiempoLimiteAceptacion}',
@@ -502,7 +527,7 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
             ],
           ),
         );
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(mensaje),
@@ -556,7 +581,7 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
         );
         return;
       }
-      
+
       print('❌ Intentando rechazar viaje ID: ${viaje.id}');
 
       final result = await _taxistaService.rechazarViaje(viaje.id);
@@ -584,19 +609,20 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
       } else {
         String mensaje = result['message'] ?? 'No se pudo rechazar el viaje';
         String mensajeDetallado = result['error_details'] ?? mensaje;
-        
-        bool esExpirado = mensaje.toLowerCase().contains('expirado') || 
-                         mensaje.toLowerCase().contains('tiempo límite') ||
-                         mensaje.toLowerCase().contains('tiempo limite');
-        
+
+        bool esExpirado = mensaje.toLowerCase().contains('expirado') ||
+            mensaje.toLowerCase().contains('tiempo límite') ||
+            mensaje.toLowerCase().contains('tiempo limite');
+
         if (esExpirado) {
-          mensaje = 'Este viaje ya no está disponible. El tiempo límite ha expirado.';
+          mensaje =
+              'Este viaje ya no está disponible. El tiempo límite ha expirado.';
           setState(() {
             _viajesPendientes.removeWhere((v) => v.id == viaje.id);
           });
           _cargarViajesPendientes();
         }
-        
+
         // Mostrar diálogo con información detallada
         showDialog(
           context: context,
@@ -619,7 +645,8 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                     Divider(),
                     Text(
                       'Detalles técnicos:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                     SizedBox(height: 4),
                     Text(
@@ -634,8 +661,10 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                   SizedBox(height: 4),
-                  Text('ID: ${viaje.id}', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-                  Text('Estado: ${viaje.estado}', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                  Text('ID: ${viaje.id}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+                  Text('Estado: ${viaje.estado}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                 ],
               ),
             ),
@@ -647,7 +676,7 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
             ],
           ),
         );
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(mensaje),
@@ -984,5 +1013,105 @@ class _ViajesPendientesPageState extends State<ViajesPendientesPage> {
       print('Error al obtener datos del usuario: $e');
       return null;
     }
+  }
+
+  // ⭐ NUEVO: Diálogo para ingresar tarifa
+  Future<double?> _mostrarDialogoTarifa() async {
+    final TextEditingController tarifaController = TextEditingController();
+    final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+    return showDialog<double>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.attach_money, color: Colors.green[700]),
+            SizedBox(width: 8),
+            Expanded(child: Text('Establecer Tarifa')),
+          ],
+        ),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ingresa el monto de la tarifa para este viaje (opcional, entre MX\$35 y MX\$60):',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                SizedBox(height: 16),
+                TextFormField(
+                  controller: tarifaController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Tarifa (MX\$)',
+                    hintText: 'Ej: 50.00',
+                    prefixIcon: Icon(Icons.attach_money),
+                    border: OutlineInputBorder(),
+                    helperText: 'Rango: MX\$35.00 - MX\$60.00',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      // La tarifa es opcional, así que no es un error si está vacía
+                      return null;
+                    }
+                    final tarifa = double.tryParse(value.trim());
+                    if (tarifa == null) {
+                      return 'Ingresa un número válido';
+                    }
+                    if (tarifa < 35.0) {
+                      return 'La tarifa mínima es MX\$35.00';
+                    }
+                    if (tarifa > 60.0) {
+                      return 'La tarifa máxima es MX\$60.00';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 8),
+                Text(
+                  '💡 Puedes dejar este campo vacío si no deseas establecer una tarifa ahora.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, null),
+            child: Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                final tarifaTexto = tarifaController.text.trim();
+                if (tarifaTexto.isEmpty) {
+                  // Si está vacío, enviar null (tarifa opcional)
+                  Navigator.pop(context, null);
+                } else {
+                  final tarifa = double.tryParse(tarifaTexto);
+                  if (tarifa != null && tarifa >= 35.0 && tarifa <= 60.0) {
+                    Navigator.pop(context, tarifa);
+                  }
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[700],
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Aceptar Viaje'),
+          ),
+        ],
+      ),
+    );
   }
 }

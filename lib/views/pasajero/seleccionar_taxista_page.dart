@@ -82,9 +82,210 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
   }
 
   void _seleccionarTaxista(Map<String, dynamic> taxista) {
-    setState(() {
-      _taxistaSeleccionado = taxista;
-    });
+    // Mostrar perfil del taxista antes de seleccionar
+    _mostrarPerfilTaxista(taxista);
+  }
+
+  void _mostrarPerfilTaxista(Map<String, dynamic> taxista) async {
+    // Obtener datos completos del taxista (usar caché si está disponible)
+    UserModel? taxistaData = _taxistasCache[taxista['id']];
+    if (taxistaData == null) {
+      try {
+        taxistaData = await _pasajeroService.obtenerUsuarioPorId(taxista['id']);
+        if (taxistaData != null) {
+          setState(() {
+            _taxistasCache[taxista['id']] = taxistaData!;
+          });
+        }
+      } catch (e) {
+        print('Error al obtener datos del taxista: $e');
+      }
+    }
+
+    // Verificar si este taxista ya está seleccionado
+    final yaSeleccionado = _taxistaSeleccionado?['id'] == taxista['id'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header con información del taxista
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.blue[700],
+                  radius: 30,
+                  child: Icon(Icons.local_taxi, color: Colors.white, size: 30),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              taxistaData != null
+                                  ? taxistaData.nombreCompleto
+                                  : 'Taxista ${taxista['id'].substring(0, 8)}...',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          if (yaSeleccionado)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.green),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      size: 14, color: Colors.green),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Seleccionado',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (taxistaData != null &&
+                          taxistaData.telefono != null) ...[
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.phone,
+                                color: Colors.grey[600], size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              taxistaData.telefono!,
+                              style: TextStyle(
+                                  color: Colors.grey[600], fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (taxistaData != null &&
+                          taxistaData.email.isNotEmpty) ...[
+                        SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.email,
+                                color: Colors.grey[600], size: 16),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                taxistaData.email,
+                                style: TextStyle(
+                                    color: Colors.grey[600], fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.orange, size: 16),
+                          SizedBox(width: 4),
+                          Text('4.5 ⭐'),
+                          SizedBox(width: 16),
+                          Icon(Icons.access_time,
+                              color: Colors.grey[600], size: 16),
+                          SizedBox(width: 4),
+                          Text('Disponible ahora'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            // Botones de acción
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(Icons.close),
+                    label: Text('Cancelar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[600],
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Seleccionar el taxista
+                      setState(() {
+                        _taxistaSeleccionado = taxista;
+                      });
+                      Navigator.pop(context);
+
+                      // Mostrar mensaje de confirmación
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Taxista seleccionado: ${taxistaData?.nombreCompleto ?? "Taxista"}',
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.check),
+                    label: Text(
+                        yaSeleccionado ? 'Ya seleccionado' : 'Seleccionar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: yaSeleccionado
+                          ? Colors.green.withOpacity(0.5)
+                          : Colors.green[700],
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _solicitarViaje() async {
@@ -111,7 +312,8 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
       );
 
       // Verificar si la sesión expiró
-      final sessionHandled = await SessionService.handleServiceResult(context, result);
+      final sessionHandled =
+          await SessionService.handleServiceResult(context, result);
       if (sessionHandled) {
         setState(() {
           _isSolicitandoViaje = false;
@@ -307,13 +509,37 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Taxista Seleccionado',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[700],
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Taxista Seleccionado',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, color: Colors.red[700]),
+                        tooltip: 'Cancelar selección de taxista',
+                        onPressed: () {
+                          setState(() {
+                            _taxistaSeleccionado = null;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Selección de taxista cancelada'),
+                              backgroundColor: Colors.grey[600],
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        padding: EdgeInsets.all(4),
+                        constraints: BoxConstraints(),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 8),
                   Row(
@@ -322,27 +548,34 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          _taxistasCache.containsKey(_taxistaSeleccionado!['id'])
-                              ? _taxistasCache[_taxistaSeleccionado!['id']]!.nombreCompleto
+                          _taxistasCache
+                                  .containsKey(_taxistaSeleccionado!['id'])
+                              ? _taxistasCache[_taxistaSeleccionado!['id']]!
+                                  .nombreCompleto
                               : 'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
                           style: TextStyle(fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
                   ),
-                  if (_taxistasCache.containsKey(_taxistaSeleccionado!['id'])) ...[
+                  if (_taxistasCache
+                      .containsKey(_taxistaSeleccionado!['id'])) ...[
                     SizedBox(height: 4),
                     Row(
                       children: [
                         Icon(Icons.phone, color: Colors.blue[700], size: 16),
                         SizedBox(width: 8),
                         Text(
-                          _taxistasCache[_taxistaSeleccionado!['id']]!.telefono ?? 'Sin teléfono',
+                          _taxistasCache[_taxistaSeleccionado!['id']]!
+                                  .telefono ??
+                              'Sin teléfono',
                           style: TextStyle(fontSize: 12),
                         ),
                       ],
                     ),
-                    if (_taxistasCache[_taxistaSeleccionado!['id']]!.email.isNotEmpty) ...[
+                    if (_taxistasCache[_taxistaSeleccionado!['id']]!
+                        .email
+                        .isNotEmpty) ...[
                       SizedBox(height: 4),
                       Row(
                         children: [
@@ -350,7 +583,8 @@ class _SeleccionarTaxistaPageState extends State<SeleccionarTaxistaPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _taxistasCache[_taxistaSeleccionado!['id']]!.email,
+                              _taxistasCache[_taxistaSeleccionado!['id']]!
+                                  .email,
                               style: TextStyle(fontSize: 12),
                               overflow: TextOverflow.ellipsis,
                             ),

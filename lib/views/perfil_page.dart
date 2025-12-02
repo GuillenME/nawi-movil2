@@ -4,7 +4,11 @@ import 'package:nawii/models/user_model.dart';
 import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/views/login_page.dart';
 import 'package:nawii/views/historial_viajes_page.dart';
+import 'package:nawii/views/calificaciones_page.dart';
 import 'package:nawii/views/editar_perfil_page.dart';
+import 'package:nawii/services/pasajero_service.dart';
+import 'package:nawii/services/taxista_service.dart';
+import 'package:nawii/models/viaje_model.dart';
 
 class PerfilPage extends StatefulWidget {
   @override
@@ -14,6 +18,14 @@ class PerfilPage extends StatefulWidget {
 class _PerfilPageState extends State<PerfilPage> {
   UserModel? _currentUser;
   bool _isLoading = true;
+  final PasajeroService _pasajeroService = PasajeroService();
+  final TaxistaService _taxistaService = TaxistaService();
+  
+  // Estadísticas
+  int _viajesRealizados = 0;
+  double _totalGastado = 0.0;
+  double _ganancias = 0.0;
+  double _calificacionPromedio = 0.0;
 
   @override
   void initState() {
@@ -25,8 +37,84 @@ class _PerfilPageState extends State<PerfilPage> {
     final user = await AuthService.getCurrentUser();
     setState(() {
       _currentUser = user;
+    });
+    
+    if (user != null) {
+      await _cargarEstadisticas();
+    }
+    
+    setState(() {
       _isLoading = false;
     });
+  }
+
+  Future<void> _cargarEstadisticas() async {
+    try {
+      Map<String, dynamic> result;
+      if (_currentUser!.isTaxista) {
+        result = await _taxistaService.obtenerMisViajes();
+      } else {
+        result = await _pasajeroService.obtenerMisViajes();
+      }
+
+      print('📊 Estadísticas - Resultado del backend:');
+      print('   Success: ${result['success']}');
+      print('   Viajes recibidos: ${result['viajes'] != null ? (result['viajes'] as List).length : 0}');
+
+      if (result['success'] == true && result['viajes'] != null) {
+        final viajes = result['viajes'] as List<ViajeModel>;
+        
+        // Log de todos los estados de viajes
+        final estados = <String, int>{};
+        for (var viaje in viajes) {
+          estados[viaje.estado] = (estados[viaje.estado] ?? 0) + 1;
+        }
+        print('   Estados de viajes: $estados');
+        
+        // Filtrar solo viajes completados
+        final viajesCompletados = viajes.where((v) => v.estado == 'completado').toList();
+        print('   Viajes completados: ${viajesCompletados.length}');
+        
+        // Calcular calificación promedio (solo para taxistas)
+        double calificacionPromedio = 0.0;
+        if (_currentUser!.isTaxista) {
+          final viajesConCalificacion = viajesCompletados
+              .where((v) => v.calificacion != null)
+              .toList();
+          print('   Viajes con calificación: ${viajesConCalificacion.length}');
+          if (viajesConCalificacion.isNotEmpty) {
+            final sumaCalificaciones = viajesConCalificacion
+                .fold(0.0, (sum, v) => sum + (v.calificacion ?? 0.0));
+            calificacionPromedio = sumaCalificaciones / viajesConCalificacion.length;
+            print('   Calificación promedio: $calificacionPromedio');
+          }
+        }
+        
+        setState(() {
+          _viajesRealizados = viajesCompletados.length;
+          _calificacionPromedio = calificacionPromedio;
+          
+          if (_currentUser!.isTaxista) {
+            // Para taxistas: sumar ganancias (tarifas)
+            _ganancias = viajesCompletados
+                .where((v) => v.tarifa != null)
+                .fold(0.0, (sum, v) => sum + (v.tarifa ?? 0.0));
+            print('   Ganancias totales: MX\$${_ganancias.toStringAsFixed(2)}');
+          } else {
+            // Para pasajeros: sumar total gastado (tarifas)
+            _totalGastado = viajesCompletados
+                .where((v) => v.tarifa != null)
+                .fold(0.0, (sum, v) => sum + (v.tarifa ?? 0.0));
+          }
+        });
+      } else {
+        print('❌ Error: No se pudieron cargar los viajes');
+        print('   Mensaje: ${result['message'] ?? 'Sin mensaje'}');
+      }
+    } catch (e) {
+      print('❌ Error al cargar estadísticas: $e');
+      print('   Stack trace: ${StackTrace.current}');
+    }
   }
 
   Future<void> _logout() async {
@@ -203,13 +291,17 @@ class _PerfilPageState extends State<PerfilPage> {
                     title: Text('Historial de Viajes', style: TextStyle(color: AppColors.white)),
                     subtitle: Text('Ver todos mis viajes', style: TextStyle(color: AppColors.mediumGrey)),
                     trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mediumGrey),
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => HistorialViajesPage(),
                         ),
                       );
+                      // Recargar estadísticas al volver
+                      if (_currentUser != null) {
+                        await _cargarEstadisticas();
+                      }
                     },
                   ),
                   Divider(color: AppColors.mediumGrey.withOpacity(0.3)),
@@ -218,24 +310,17 @@ class _PerfilPageState extends State<PerfilPage> {
                     title: Text('Calificaciones', style: TextStyle(color: AppColors.white)),
                     subtitle: Text('Ver mis calificaciones', style: TextStyle(color: AppColors.mediumGrey)),
                     trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mediumGrey),
-                    onTap: () {
-                      // TODO: Implementar calificaciones
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Calificaciones')),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CalificacionesPage(),
+                        ),
                       );
-                    },
-                  ),
-                  Divider(color: AppColors.mediumGrey.withOpacity(0.3)),
-                  ListTile(
-                    leading: Icon(Icons.settings, color: AppColors.mediumGrey),
-                    title: Text('Configuración', style: TextStyle(color: AppColors.white)),
-                    subtitle: Text('Ajustes de la aplicación', style: TextStyle(color: AppColors.mediumGrey)),
-                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.mediumGrey),
-                    onTap: () {
-                      // TODO: Implementar configuración
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Configuración')),
-                      );
+                      // Recargar estadísticas al volver
+                      if (_currentUser != null) {
+                        await _cargarEstadisticas();
+                      }
                     },
                   ),
                 ],
@@ -285,7 +370,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 Expanded(
                   child: _buildStatCard(
                     'Viajes Completados',
-                    '0',
+                    '$_viajesRealizados',
                     Icons.directions_car,
                     AppColors.successColor,
                   ),
@@ -294,9 +379,11 @@ class _PerfilPageState extends State<PerfilPage> {
                 Expanded(
                   child: _buildStatCard(
                     'Calificación',
-                    '4.5',
+                    _calificacionPromedio > 0 
+                        ? _calificacionPromedio.toStringAsFixed(1)
+                        : 'N/A',
                     Icons.star,
-                    AppColors.primaryYellow,
+                    Colors.orange[700]!,
                   ),
                 ),
               ],
@@ -307,18 +394,9 @@ class _PerfilPageState extends State<PerfilPage> {
                 Expanded(
                   child: _buildStatCard(
                     'Ganancias',
-                    '\$0',
+                    'MX\$${_ganancias.toStringAsFixed(2)}',
                     Icons.attach_money,
                     AppColors.successColor,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    'Horas Online',
-                    '0h',
-                    Icons.access_time,
-                    AppColors.primaryDark,
                   ),
                 ),
               ],
@@ -351,7 +429,7 @@ class _PerfilPageState extends State<PerfilPage> {
                 Expanded(
                   child: _buildStatCard(
                     'Viajes Realizados',
-                    '0',
+                    '$_viajesRealizados',
                     Icons.directions_car,
                     AppColors.primaryDark,
                   ),
@@ -359,21 +437,8 @@ class _PerfilPageState extends State<PerfilPage> {
                 SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
-                    'Calificación Promedio',
-                    '4.5',
-                    Icons.star,
-                    AppColors.primaryYellow,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
                     'Total Gastado',
-                    '\$0',
+                    'MX\$${_totalGastado.toStringAsFixed(2)}',
                     Icons.attach_money,
                     AppColors.successColor,
                   ),

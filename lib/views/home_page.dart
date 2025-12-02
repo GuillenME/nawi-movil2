@@ -7,6 +7,7 @@ import 'package:nawii/views/pasajero/solicitar_viaje_con_mapa_page.dart';
 import 'package:nawii/views/taxista/taxista_home_page.dart';
 import 'package:nawii/views/perfil_page.dart';
 import 'package:nawii/views/historial_viajes_page.dart';
+import 'package:nawii/views/calificaciones_page.dart';
 import 'package:nawii/widgets/banner_ad_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -191,9 +192,11 @@ class PasajeroHomePage extends StatelessWidget {
                     subtitle: Text('Ver mis calificaciones',
                         style: TextStyle(color: AppColors.mediumGrey)),
                     onTap: () {
-                      // TODO: Implementar calificaciones
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Calificaciones')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CalificacionesPage(),
+                        ),
                       );
                     },
                   ),

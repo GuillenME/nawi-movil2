@@ -60,11 +60,7 @@ La aplicación cuenta con un diseño moderno con tema oscuro, utilizando una pal
 4. **Viaje en curso**: Seguimiento en tiempo real de la ubicación del taxista
 5. **Finalización**: Calificación del servicio y registro en el historial
 
-### Alcance Geográfico
 
-La aplicación está especialmente diseñada para la región de Ocosingo, Chiapas, México, con soporte optimizado para ubicaciones específicas como la Universidad Tecnológica de la Selva (UTS), facilitando el transporte de estudiantes y residentes de la zona.
-
----
 
 ## Getting Started
 

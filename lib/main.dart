@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:nawii/views/login_page.dart';
-import 'package:nawii/views/home_page.dart';
-import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/views/splash_page.dart';
 import 'package:nawii/utils/app_colors.dart';
 
@@ -34,7 +31,8 @@ class MyApp extends StatelessWidget {
       title: 'NAWI',
       theme: ThemeData(
         primaryColor: AppColors.primaryDark,
-        colorScheme: ColorScheme.light(
+        colorScheme: ColorScheme(
+          brightness: Brightness.light,
           primary: AppColors.primaryDark,
           secondary: AppColors.primaryYellow,
           surface: AppColors.surfaceColor,

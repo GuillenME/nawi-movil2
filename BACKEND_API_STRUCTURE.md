@@ -317,9 +317,109 @@
 
 ---
 
+### 6. POST /api/pasajero/calificar-viaje/{viajeId}
+
+**Descripción:** Califica un viaje completado
+
+**Autenticación:** Requerida (Bearer Token)
+
+**Request Body:**
+
+```json
+{
+  "calificacion": 5,                    // int, requerido, rango 1-5
+  "comentario": "Excelente servicio"      // string, opcional, máximo 500 caracteres
+}
+```
+
+**Response Success (201):**
+
+```json
+{
+  "success": true,
+  "message": "Viaje calificado exitosamente",
+  "data": {
+    "id": "uuid-del-viaje",
+    "calificacion": 5,
+    "comentario": "Excelente servicio"
+  }
+}
+```
+
+**Response Error - Validación (422):**
+
+```json
+{
+  "success": false,
+  "message": "Datos de entrada inválidos",
+  "errors": {
+    "calificacion": ["El campo calificacion debe estar entre 1 y 5"],
+    "comentario": ["El campo comentario no puede tener más de 500 caracteres"]
+  }
+}
+```
+
+**Response Error - Viaje no completado (422):**
+
+```json
+{
+  "success": false,
+  "message": "El viaje debe estar completado para poder calificarlo"
+}
+```
+
+**Response Error - Viaje ya calificado (422):**
+
+```json
+{
+  "success": false,
+  "message": "Este viaje ya ha sido calificado"
+}
+```
+
+**Response Error - No encontrado (404):**
+
+```json
+{
+  "success": false,
+  "message": "Viaje no encontrado o no pertenece al pasajero"
+}
+```
+
+**Response Error - No autorizado (401):**
+
+```json
+{
+  "success": false,
+  "message": "Usuario no autenticado"
+}
+```
+
+**Response Error - Prohibido (403):**
+
+```json
+{
+  "success": false,
+  "message": "Usuario no es un pasajero"
+}
+```
+
+**Validaciones implementadas:**
+
+- ✅ Verifica que el token JWT sea válido (middleware `auth:api` - retorna 401 si no es válido)
+- ✅ Verifica que el usuario sea un pasajero (retorna 403 si no lo es)
+- ✅ Verifica que el viaje pertenezca al pasajero autenticado
+- ✅ Verifica que el viaje esté en estado "completado"
+- ✅ Valida que `calificacion` esté entre 1 y 5 (integer)
+- ✅ Valida que `comentario` sea opcional pero si existe, tenga máximo 500 caracteres
+- ✅ Verifica que el viaje no haya sido calificado previamente
+- ✅ Valida que el ID del viaje no esté vacío
+
+---
+
 ## 👤 API de Perfil
 
-### 6. PUT /api/usuario/perfil
+### 7. PUT /api/usuario/perfil
 
 **Descripción:** Actualizar perfil del usuario autenticado
 

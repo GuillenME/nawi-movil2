@@ -44,6 +44,24 @@ class ViajeModel {
     this.taxista,
   });
 
+  // Helper para parsear fechas y convertirlas a hora local
+  static DateTime _parsearFecha(dynamic fechaValue) {
+    if (fechaValue == null) return DateTime.now();
+    
+    DateTime fecha;
+    if (fechaValue is String) {
+      fecha = DateTime.parse(fechaValue);
+    } else {
+      return DateTime.now();
+    }
+    
+    // Si la fecha está en UTC, convertirla a hora local
+    if (fecha.isUtc) {
+      return fecha.toLocal();
+    }
+    return fecha;
+  }
+
   factory ViajeModel.fromJson(Map<String, dynamic> json) {
     // Parsear datos anidados de pasajero y taxista si existen
     UserModel? pasajeroData;
@@ -125,18 +143,18 @@ class ViajeModel {
       direccionDestino: json['direccion_destino'] ?? '',
       estado: json['estado'] ?? 'solicitado',
       fechaCreacion: json['fecha_creacion'] != null
-          ? DateTime.parse(json['fecha_creacion'])
+          ? _parsearFecha(json['fecha_creacion'])
           : (json['created_at'] != null
-              ? DateTime.parse(json['created_at'])
+              ? _parsearFecha(json['created_at'])
               : DateTime.now()),
       fechaAceptacion: json['fecha_aceptacion'] != null
-          ? DateTime.parse(json['fecha_aceptacion'])
+          ? _parsearFecha(json['fecha_aceptacion'])
           : null,
       fechaCompletado: json['fecha_completado'] != null
-          ? DateTime.parse(json['fecha_completado'])
+          ? _parsearFecha(json['fecha_completado'])
           : null,
       tiempoLimiteAceptacion: json['tiempo_limite_aceptacion'] != null
-          ? DateTime.parse(json['tiempo_limite_aceptacion'])
+          ? _parsearFecha(json['tiempo_limite_aceptacion'])
           : null,
       tarifa: json['tarifa']?.toDouble(),
       calificacion: json['calificacion']?.toDouble(),

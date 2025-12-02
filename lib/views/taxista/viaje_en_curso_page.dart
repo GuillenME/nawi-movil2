@@ -6,6 +6,8 @@ import 'package:nawii/services/location_service_simple.dart';
 import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/services/auth_service.dart';
 import 'package:nawii/services/session_service.dart';
+import 'package:nawii/models/viaje_model.dart';
+import 'package:nawii/widgets/persistent_message.dart';
 
 class TaxistaViajeEnCursoPage extends StatefulWidget {
   final String viajeId;
@@ -26,32 +28,59 @@ class TaxistaViajeEnCursoPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _TaxistaViajeEnCursoPageState createState() => _TaxistaViajeEnCursoPageState();
+  _TaxistaViajeEnCursoPageState createState() =>
+      _TaxistaViajeEnCursoPageState();
 }
 
 class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
   final DatabaseReference viajesRef = FirebaseDatabase.instance.ref('viajes');
   final TaxistaService _taxistaService = TaxistaService();
-  
+
   GoogleMapController? _mapController;
   StreamSubscription? _viajeSubscription;
   StreamSubscription? _ubicacionSubscription;
-  
+
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
-  
+
   Map<String, double>? _miUbicacion;
   String _estadoViaje = 'aceptado';
   bool _isCompletado = false;
+  double? _tarifa; // Tarifa del viaje
+  String? _mensajePersistente; // Mensaje persistente a mostrar
 
   @override
   void initState() {
     super.initState();
     _detectarMiUbicacion();
+    _cargarInformacionViaje();
     _inicializarMapa();
     _escucharEstadoViaje();
     _escucharUbicacionPasajero();
     _actualizarMiUbicacionPeriodicamente();
+  }
+
+  Future<void> _cargarInformacionViaje() async {
+    try {
+      // Obtener información del viaje desde el backend para obtener la tarifa
+      final viajes = await _taxistaService.obtenerMisViajes();
+      if (viajes['success'] == true) {
+        final listaViajes = viajes['viajes'] as List<ViajeModel>;
+        try {
+          final viajeActual = listaViajes.firstWhere(
+            (v) => v.id == widget.viajeId,
+          );
+          setState(() {
+            _tarifa = viajeActual.tarifa;
+          });
+        } catch (e) {
+          // No se encontró el viaje en la lista, intentar obtener desde Firebase
+          print('Viaje no encontrado en la lista, intentando desde Firebase');
+        }
+      }
+    } catch (e) {
+      print('Error al cargar información del viaje: $e');
+    }
   }
 
   @override
@@ -68,7 +97,7 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
       if (!hasPermission) {
         hasPermission = await LocationServiceSimple.requestLocationPermission();
       }
-      
+
       if (hasPermission) {
         final ubicacion = await LocationServiceSimple.getCurrentLocation();
         setState(() {
@@ -87,14 +116,14 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
         timer.cancel();
         return;
       }
-      
+
       try {
         final ubicacion = await LocationServiceSimple.getCurrentLocation();
         setState(() {
           _miUbicacion = ubicacion;
         });
         _actualizarMapa();
-        
+
         // Actualizar ubicación en Firebase
         final user = await AuthService.getCurrentUser();
         if (user != null) {
@@ -136,30 +165,49 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
     if (_miUbicacion != null) {
       markers.add(Marker(
         markerId: MarkerId('mi_ubicacion'),
-        position: LatLng(_miUbicacion!['latitude']!, _miUbicacion!['longitude']!),
+        position:
+            LatLng(_miUbicacion!['latitude']!, _miUbicacion!['longitude']!),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
         infoWindow: InfoWindow(title: 'Mi ubicación'),
       ));
 
-      // Polilínea desde mi ubicación al origen (si aún no he recogido al pasajero)
-      // o al destino (si ya lo recogí)
+      // Polilíneas según el estado del viaje
       if (_estadoViaje == 'aceptado' || _estadoViaje == 'en_progreso') {
-        List<LatLng> puntos = [
-          LatLng(_miUbicacion!['latitude']!, _miUbicacion!['longitude']!),
-        ];
-        
         if (_estadoViaje == 'aceptado') {
-          puntos.add(LatLng(widget.origenLat, widget.origenLon)); // Al origen
+          // Ruta 1: Del taxista al origen (donde está el pasajero)
+          polylines.add(Polyline(
+            polylineId: PolylineId('ruta_taxista_origen'),
+            points: [
+              LatLng(_miUbicacion!['latitude']!, _miUbicacion!['longitude']!),
+              LatLng(widget.origenLat, widget.origenLon),
+            ],
+            color: Colors.blue,
+            width: 4,
+          ));
+
+          // Ruta 2: Del origen al destino (ruta completa del viaje)
+          polylines.add(Polyline(
+            polylineId: PolylineId('ruta_origen_destino'),
+            points: [
+              LatLng(widget.origenLat, widget.origenLon),
+              LatLng(widget.destinoLat, widget.destinoLon),
+            ],
+            color: Colors.orange,
+            width: 4,
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+          ));
         } else {
-          puntos.add(LatLng(widget.destinoLat, widget.destinoLon)); // Al destino
+          // Cuando el viaje está en progreso: solo del taxista al destino
+          polylines.add(Polyline(
+            polylineId: PolylineId('ruta'),
+            points: [
+              LatLng(_miUbicacion!['latitude']!, _miUbicacion!['longitude']!),
+              LatLng(widget.destinoLat, widget.destinoLon),
+            ],
+            color: Colors.blue,
+            width: 4,
+          ));
         }
-        
-        polylines.add(Polyline(
-          polylineId: PolylineId('ruta'),
-          points: puntos,
-          color: Colors.blue,
-          width: 4,
-        ));
       }
     } else {
       // Si no tengo mi ubicación, mostrar ruta de origen a destino
@@ -179,27 +227,38 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
       _polylines = polylines;
     });
 
-    // Ajustar cámara
+    // Ajustar cámara para incluir todos los puntos relevantes
     if (_miUbicacion != null) {
+      // Calcular los límites incluyendo: taxista, origen y destino
+      final latMin = [
+        _miUbicacion!['latitude']!,
+        widget.origenLat,
+        widget.destinoLat,
+      ].reduce((a, b) => a < b ? a : b);
+
+      final latMax = [
+        _miUbicacion!['latitude']!,
+        widget.origenLat,
+        widget.destinoLat,
+      ].reduce((a, b) => a > b ? a : b);
+
+      final lonMin = [
+        _miUbicacion!['longitude']!,
+        widget.origenLon,
+        widget.destinoLon,
+      ].reduce((a, b) => a < b ? a : b);
+
+      final lonMax = [
+        _miUbicacion!['longitude']!,
+        widget.origenLon,
+        widget.destinoLon,
+      ].reduce((a, b) => a > b ? a : b);
+
       _mapController!.animateCamera(
         CameraUpdate.newLatLngBounds(
           LatLngBounds(
-            southwest: LatLng(
-              _miUbicacion!['latitude']! < widget.destinoLat
-                  ? _miUbicacion!['latitude']!
-                  : widget.destinoLat,
-              _miUbicacion!['longitude']! < widget.destinoLon
-                  ? _miUbicacion!['longitude']!
-                  : widget.destinoLon,
-            ),
-            northeast: LatLng(
-              _miUbicacion!['latitude']! > widget.destinoLat
-                  ? _miUbicacion!['latitude']!
-                  : widget.destinoLat,
-              _miUbicacion!['longitude']! > widget.destinoLon
-                  ? _miUbicacion!['longitude']!
-                  : widget.destinoLon,
-            ),
+            southwest: LatLng(latMin, lonMin),
+            northeast: LatLng(latMax, lonMax),
           ),
           100.0,
         ),
@@ -218,27 +277,36 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
   }
 
   void _escucharEstadoViaje() {
-    _viajeSubscription = viajesRef.child(widget.viajeId).onValue.listen((event) {
+    _viajeSubscription =
+        viajesRef.child(widget.viajeId).onValue.listen((event) {
       if (event.snapshot.exists) {
         final data = Map<String, dynamic>.from(event.snapshot.value as Map);
         final estado = data['estado'] as String?;
+        final tarifa = data['tarifa']?.toDouble();
 
         setState(() {
           _estadoViaje = estado ?? 'aceptado';
+          if (tarifa != null) {
+            _tarifa = tarifa;
+          }
         });
         _actualizarMapa();
+
+        // Recargar información del viaje desde el backend para obtener la tarifa actualizada
+        _cargarInformacionViaje();
 
         if (estado == 'completado' && !_isCompletado) {
           _isCompletado = true;
           _mostrarDialogoCompletado();
         } else if (estado == 'cancelado') {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('El viaje fue cancelado'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          setState(() {
+            _mensajePersistente = 'El viaje fue cancelado';
+          });
+          Future.delayed(Duration(seconds: 2), () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          });
         }
       }
     });
@@ -299,35 +367,28 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
     if (confirmar == true) {
       try {
         final result = await _taxistaService.completarViaje(widget.viajeId);
-        
+
         // Verificar si la sesión expiró
-        final sessionHandled = await SessionService.handleServiceResult(context, result);
+        final sessionHandled =
+            await SessionService.handleServiceResult(context, result);
         if (sessionHandled) {
           return;
         }
 
         if (result['success']) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Viaje completado exitosamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          setState(() {
+            _mensajePersistente = 'Viaje completado exitosamente';
+          });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Error al completar viaje'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          setState(() {
+            _mensajePersistente =
+                result['message'] ?? 'Error al completar viaje';
+          });
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        setState(() {
+          _mensajePersistente = 'Error: $e';
+        });
       }
     }
   }
@@ -339,19 +400,13 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
         'estado': 'en_progreso',
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Viaje iniciado'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      setState(() {
+        _mensajePersistente = 'Viaje iniciado';
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al iniciar viaje: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() {
+        _mensajePersistente = 'Error al iniciar viaje: $e';
+      });
     }
   }
 
@@ -420,59 +475,122 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
           ),
 
           // Panel inferior con información y botones
-          Container(
-            padding: EdgeInsets.all(16),
-            color: Colors.white,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: EdgeInsets.all(16),
+                color: Colors.white,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.location_on, color: Colors.green),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Origen',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                      ),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.green),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Origen',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ),
+                        Icon(Icons.flag, color: Colors.red),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Destino',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey[600]),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ],
                     ),
-                    Icon(Icons.flag, color: Colors.red),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Destino',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                        textAlign: TextAlign.right,
+                    SizedBox(height: 16),
+                    // Mostrar tarifa si está establecida
+                    if (_tarifa != null) ...[
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green[300]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.attach_money,
+                                color: Colors.green[700], size: 24),
+                            SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Tarifa del viaje',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                Text(
+                                  'MX\$${_tarifa!.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      SizedBox(height: 16),
+                    ],
+                    // Botones de acción
+                    if (_estadoViaje == 'aceptado')
+                      ElevatedButton.icon(
+                        onPressed: _iniciarViaje,
+                        icon: Icon(Icons.directions_car),
+                        label: Text('Iniciar Viaje (Recoger Pasajero)'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange[700],
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(double.infinity, 50),
+                        ),
+                      )
+                    else if (_estadoViaje == 'en_progreso')
+                      ElevatedButton.icon(
+                        onPressed: _completarViaje,
+                        icon: Icon(Icons.check_circle),
+                        label: Text('Completar Viaje'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(double.infinity, 50),
+                        ),
+                      ),
                   ],
                 ),
-                SizedBox(height: 16),
-                // Botones de acción
-                if (_estadoViaje == 'aceptado')
-                  ElevatedButton.icon(
-                    onPressed: _iniciarViaje,
-                    icon: Icon(Icons.directions_car),
-                    label: Text('Iniciar Viaje (Recoger Pasajero)'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700],
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                  )
-                else if (_estadoViaje == 'en_progreso')
-                  ElevatedButton.icon(
-                    onPressed: _completarViaje,
-                    icon: Icon(Icons.check_circle),
-                    label: Text('Completar Viaje'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                  ),
-              ],
-            ),
+              ),
+              // Mensajes persistentes
+              if (_mensajePersistente != null)
+                PersistentMessage(
+                  message: _mensajePersistente!,
+                  backgroundColor: _mensajePersistente!.contains('Error') ||
+                          _mensajePersistente!.contains('cancelado')
+                      ? Colors.red[800]!
+                      : _mensajePersistente!.contains('completado') ||
+                              _mensajePersistente!.contains('iniciado')
+                          ? Colors.green[800]!
+                          : Colors.grey[800]!,
+                  textColor: Colors.white,
+                ),
+              // Mensaje persistente sobre permisos de ubicación
+              PersistentMessage.info(
+                'Se solicitarán permisos de ubicación para funcionar como taxista',
+              ),
+            ],
           ),
         ],
       ),
@@ -518,4 +636,3 @@ class _TaxistaViajeEnCursoPageState extends State<TaxistaViajeEnCursoPage> {
     }
   }
 }
-

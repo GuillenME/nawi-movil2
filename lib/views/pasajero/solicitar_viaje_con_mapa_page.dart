@@ -10,12 +10,14 @@ import 'package:nawii/models/viaje_model.dart';
 import 'package:nawii/models/user_model.dart';
 import 'package:nawii/utils/app_colors.dart';
 import 'package:nawii/utils/message_dialog.dart';
+import 'package:nawii/utils/tarifa_estimada.dart';
 import 'package:nawii/views/pasajero/viaje_en_curso_page.dart';
 import 'package:nawii/widgets/places_autocomplete_field.dart';
 
 class SolicitarViajeConMapaPage extends StatefulWidget {
   @override
-  _SolicitarViajeConMapaPageState createState() => _SolicitarViajeConMapaPageState();
+  _SolicitarViajeConMapaPageState createState() =>
+      _SolicitarViajeConMapaPageState();
 }
 
 class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
@@ -23,19 +25,21 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
   final DatabaseReference viajesRef = FirebaseDatabase.instance.ref('viajes');
   final PasajeroService _pasajeroService = PasajeroService();
   final TextEditingController _destinoController = TextEditingController();
-  
+
   GoogleMapController? _mapController;
   Map<String, double> _userLocation = {
     'latitude': 16.867,
     'longitude': -92.094
   };
-  
+
   Map<String, double>? _destino;
   Set<Marker> _markers = {};
   List<Map<String, dynamic>> _taxisDisponibles = [];
   Map<String, dynamic>? _taxistaSeleccionado;
   bool _isLoading = true;
   bool _isSolicitandoViaje = false;
+  bool _destinoConfirmado =
+      false; // Flag para indicar si el destino ya fue confirmado
   StreamSubscription? _viajeSubscription;
   Map<String, UserModel> _taxistasCache = {};
 
@@ -70,12 +74,13 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
         }
       }
 
-      Map<String, double> position = await LocationServiceSimple.getCurrentLocation();
+      Map<String, double> position =
+          await LocationServiceSimple.getCurrentLocation();
       setState(() {
         _userLocation = position;
         _isLoading = false;
       });
-      
+
       _actualizarMapa();
     } catch (e) {
       setState(() => _isLoading = false);
@@ -91,7 +96,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
     if (_mapController == null) return;
 
     Set<Marker> markers = {};
-    
+
     // Marcador de usuario
     markers.add(Marker(
       markerId: MarkerId('user'),
@@ -132,21 +137,25 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
 
     setState(() => _markers = markers);
 
-    // Ajustar cámara para mostrar todos los marcadores
-    if (_destino != null && _taxisDisponibles.isNotEmpty) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngBounds(
-          _calcularBounds(),
-          100.0,
-        ),
-      );
-    } else {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(_userLocation['latitude']!, _userLocation['longitude']!),
-          14.0,
-        ),
-      );
+    // ⭐ CORREGIDO: Solo ajustar cámara automáticamente si el destino NO ha sido confirmado
+    // Si el destino ya fue confirmado, mantener la cámara donde está (no mover al centro)
+    if (!_destinoConfirmado) {
+      // Ajustar cámara para mostrar todos los marcadores
+      if (_destino != null && _taxisDisponibles.isNotEmpty) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            _calcularBounds(),
+            100.0,
+          ),
+        );
+      } else {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(_userLocation['latitude']!, _userLocation['longitude']!),
+            14.0,
+          ),
+        );
+      }
     }
   }
 
@@ -157,10 +166,14 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
     double maxLng = _userLocation['longitude']!;
 
     if (_destino != null) {
-      minLat = minLat < _destino!['latitude']! ? minLat : _destino!['latitude']!;
-      maxLat = maxLat > _destino!['latitude']! ? maxLat : _destino!['latitude']!;
-      minLng = minLng < _destino!['longitude']! ? minLng : _destino!['longitude']!;
-      maxLng = maxLng > _destino!['longitude']! ? maxLng : _destino!['longitude']!;
+      minLat =
+          minLat < _destino!['latitude']! ? minLat : _destino!['latitude']!;
+      maxLat =
+          maxLat > _destino!['latitude']! ? maxLat : _destino!['latitude']!;
+      minLng =
+          minLng < _destino!['longitude']! ? minLng : _destino!['longitude']!;
+      maxLng =
+          maxLng > _destino!['longitude']! ? maxLng : _destino!['longitude']!;
     }
 
     for (var taxista in _taxisDisponibles) {
@@ -197,14 +210,14 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       setState(() {
         _taxisDisponibles = taxisList;
       });
-      
+
       // Cargar datos completos de los taxistas
       for (var taxista in taxisList) {
         if (!_taxistasCache.containsKey(taxista['id'])) {
           _cargarDatosTaxista(taxista['id']);
         }
       }
-      
+
       _actualizarMapa();
     });
   }
@@ -224,12 +237,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
   }
 
   void _seleccionarTaxista(Map<String, dynamic> taxista) {
-    setState(() {
-      _taxistaSeleccionado = taxista;
-    });
-    _actualizarMapa();
-    
-    // Mostrar bottom sheet con información del taxista
+    // Solo mostrar el perfil del taxista, no seleccionarlo automáticamente
     _mostrarInfoTaxista(taxista);
   }
 
@@ -256,58 +264,103 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       }
     }
 
+    // Verificar si este taxista ya está seleccionado
+    final yaSeleccionado = _taxistaSeleccionado?['id'] == taxista['id'];
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => Container(
         padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header con información del taxista
             Row(
               children: [
                 CircleAvatar(
                   backgroundColor: AppColors.primaryDark,
                   radius: 30,
-                  child: Icon(Icons.local_taxi, color: AppColors.primaryYellow, size: 30),
+                  child: Icon(Icons.local_taxi,
+                      color: AppColors.primaryYellow, size: 30),
                 ),
                 SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        taxistaData != null 
-                            ? taxistaData.nombreCompleto
-                            : 'Taxista ${taxista['id'].substring(0, 8)}...',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              taxistaData != null
+                                  ? taxistaData.nombreCompleto
+                                  : 'Taxista ${taxista['id'].substring(0, 8)}...',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          if (yaSeleccionado)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.successColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border:
+                                    Border.all(color: AppColors.successColor),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      size: 14, color: AppColors.successColor),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Seleccionado',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.successColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
-                      if (taxistaData != null && taxistaData.telefono != null) ...[
+                      if (taxistaData != null &&
+                          taxistaData.telefono != null) ...[
                         SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.phone, color: AppColors.mediumGrey, size: 16),
+                            Icon(Icons.phone,
+                                color: AppColors.mediumGrey, size: 16),
                             SizedBox(width: 4),
                             Text(
                               taxistaData.telefono!,
-                              style: TextStyle(color: AppColors.mediumGrey, fontSize: 14),
+                              style: TextStyle(
+                                  color: AppColors.mediumGrey, fontSize: 14),
                             ),
                           ],
                         ),
                       ],
-                      if (taxistaData != null && taxistaData.email.isNotEmpty) ...[
+                      if (taxistaData != null &&
+                          taxistaData.email.isNotEmpty) ...[
                         SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.email, color: AppColors.mediumGrey, size: 16),
+                            Icon(Icons.email,
+                                color: AppColors.mediumGrey, size: 16),
                             SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 taxistaData.email,
-                                style: TextStyle(color: AppColors.mediumGrey, fontSize: 12),
+                                style: TextStyle(
+                                    color: AppColors.mediumGrey, fontSize: 12),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -317,13 +370,17 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                       SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.star, color: AppColors.primaryYellow, size: 16),
+                          Icon(Icons.star,
+                              color: AppColors.primaryYellow, size: 16),
                           SizedBox(width: 4),
-                          Text('4.5 ⭐', style: TextStyle(color: AppColors.white)),
+                          Text('4.5 ⭐',
+                              style: TextStyle(color: AppColors.white)),
                           SizedBox(width: 16),
-                          Icon(Icons.location_on, color: AppColors.mediumGrey, size: 16),
+                          Icon(Icons.location_on,
+                              color: AppColors.mediumGrey, size: 16),
                           SizedBox(width: 4),
-                          Text('${distancia.toStringAsFixed(1)} km', style: TextStyle(color: AppColors.white)),
+                          Text('${distancia.toStringAsFixed(1)} km',
+                              style: TextStyle(color: AppColors.white)),
                         ],
                       ),
                     ],
@@ -332,6 +389,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
               ],
             ),
             SizedBox(height: 20),
+            // Botones de acción
             Row(
               children: [
                 Expanded(
@@ -340,10 +398,53 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                       Navigator.pop(context);
                     },
                     icon: Icon(Icons.close),
-                    label: Text('Cerrar'),
+                    label: Text('Cancelar'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.mediumGrey,
                       foregroundColor: AppColors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      // Seleccionar el taxista
+                      setState(() {
+                        _taxistaSeleccionado = taxista;
+                      });
+                      _actualizarMapa();
+                      Navigator.pop(context);
+
+                      // Mostrar mensaje de confirmación
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Taxista seleccionado: ${taxistaData?.nombreCompleto ?? "Taxista"}',
+                                ),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: AppColors.successColor,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    icon: Icon(Icons.check),
+                    label: Text(
+                        yaSeleccionado ? 'Ya seleccionado' : 'Seleccionar'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: yaSeleccionado
+                          ? AppColors.successColor.withOpacity(0.5)
+                          : AppColors.successColor,
+                      foregroundColor: AppColors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
@@ -365,12 +466,53 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       return;
     }
 
+    // ⭐ CORREGIDO: Si ya hay coordenadas establecidas (desde autocompletado), no hacer geocoding
+    if (_destino != null) {
+      final lat = _destino!['latitude']!;
+      final lng = _destino!['longitude']!;
+
+      print('✅ Destino ya tiene coordenadas desde autocomplete');
+      print('📍 Coordenadas: $lat, $lng');
+      print('📝 Dirección: ${_destinoController.text}');
+      print('✅ No se hará geocoding, usando coordenadas existentes');
+
+      // Marcar destino como confirmado ANTES de actualizar el mapa
+      setState(() {
+        _destinoConfirmado = true;
+      });
+
+      // Actualizar marcadores sin ajustar cámara automáticamente
+      _actualizarMapa();
+
+      // Mover la cámara al destino (esto se ejecutará después de actualizar marcadores)
+      Future.delayed(Duration(milliseconds: 100), () {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(lat, lng),
+            15.0,
+          ),
+        );
+      });
+
+      MessageDialog.showSuccess(
+        context,
+        'Destino confirmado: ${_destinoController.text}',
+        title: 'Destino Confirmado',
+      );
+      return;
+    }
+
+    print(
+        '⚠️  No hay coordenadas previas, usando geocoding para obtener coordenadas');
+    print('📝 Dirección a buscar: ${_destinoController.text}');
+
     // Mostrar loading
     setState(() => _isLoading = true);
 
     try {
       // Usar Geocoding API para convertir la dirección a coordenadas
-      final coordenadas = await _pasajeroService.obtenerCoordenadasDesdeDireccion(
+      final coordenadas =
+          await _pasajeroService.obtenerCoordenadasDesdeDireccion(
         _destinoController.text.trim(),
       );
 
@@ -379,18 +521,22 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
           'latitude': coordenadas['lat']!,
           'longitude': coordenadas['lng']!,
         };
+        _destinoConfirmado = true; // Marcar como confirmado
         _isLoading = false;
       });
 
+      // Actualizar marcadores sin ajustar cámara automáticamente
       _actualizarMapa();
-      
+
       // Mover la cámara al destino
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(coordenadas['lat']!, coordenadas['lng']!),
-          15.0,
-        ),
-      );
+      Future.delayed(Duration(milliseconds: 100), () {
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(coordenadas['lat']!, coordenadas['lng']!),
+            15.0,
+          ),
+        );
+      });
 
       // Mensaje de éxito con diálogo modal
       MessageDialog.showSuccess(
@@ -439,7 +585,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
       );
 
       // Verificar si la sesión expiró
-      final sessionHandled = await SessionService.handleServiceResult(context, result);
+      final sessionHandled =
+          await SessionService.handleServiceResult(context, result);
       if (sessionHandled) {
         setState(() => _isSolicitandoViaje = false);
         return;
@@ -447,7 +594,7 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
 
       if (result['success']) {
         final viaje = result['viaje'] as ViajeModel?;
-        
+
         MessageDialog.showInfo(
           context,
           'Solicitud enviada. Esperando respuesta del taxista...',
@@ -542,32 +689,41 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                           decoration: InputDecoration(
                             hintText: 'Ingresa tu destino',
                             hintStyle: TextStyle(color: AppColors.mediumGrey),
-                            prefixIcon: Icon(Icons.flag, color: AppColors.errorColor),
+                            prefixIcon:
+                                Icon(Icons.flag, color: AppColors.errorColor),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.mediumGrey),
+                              borderSide:
+                                  BorderSide(color: AppColors.mediumGrey),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.mediumGrey),
+                              borderSide:
+                                  BorderSide(color: AppColors.mediumGrey),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(color: AppColors.primaryYellow, width: 2),
+                              borderSide: BorderSide(
+                                  color: AppColors.primaryYellow, width: 2),
                             ),
                             filled: true,
                             fillColor: AppColors.primaryDark.withOpacity(0.7),
                           ),
                           onPlaceSelected: (placeId, description, lat, lng) {
                             // ⭐ NUEVO: Usar coordenadas directamente del lugar seleccionado
-                            print('Lugar seleccionado: $description');
+                            print('📍 Lugar seleccionado: $description');
                             if (lat != null && lng != null) {
+                              print('✅ Coordenadas recibidas: $lat, $lng');
                               setState(() {
                                 _destino = {
                                   'latitude': lat,
                                   'longitude': lng,
                                 };
+                                // NO marcar como confirmado todavía, solo cuando se presione "Confirmar"
+                                _destinoConfirmado = false;
                               });
+                              print(
+                                  '✅ Destino guardado: ${_destino!['latitude']}, ${_destino!['longitude']}');
                               // Actualizar marcadores en el mapa
                               _actualizarMapa();
                               // Mover la cámara al destino
@@ -578,6 +734,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                 ),
                               );
                             } else {
+                              print(
+                                  '⚠️  No se recibieron coordenadas, usando geocoding como fallback');
                               // Si no hay coordenadas, usar geocoding como fallback
                               _confirmarDestino();
                             }
@@ -619,14 +777,14 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                           _actualizarMapa();
                         },
                       ),
-                      
+
                       // Información del viaje
                       if (_destino != null)
                         Positioned(
                           top: 16,
                           left: 16,
                           right: 16,
-                            child: Card(
+                          child: Card(
                             color: AppColors.primaryDark.withOpacity(0.9),
                             elevation: 4,
                             child: Padding(
@@ -637,12 +795,16 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.location_on, color: AppColors.successColor, size: 20),
+                                      Icon(Icons.location_on,
+                                          color: AppColors.successColor,
+                                          size: 20),
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'Origen confirmado',
-                                          style: TextStyle(fontSize: 12, color: AppColors.white),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.white),
                                         ),
                                       ),
                                     ],
@@ -650,14 +812,18 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                                   SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      Icon(Icons.flag, color: AppColors.errorColor, size: 20),
+                                      Icon(Icons.flag,
+                                          color: AppColors.errorColor,
+                                          size: 20),
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _destinoController.text.isNotEmpty
                                               ? _destinoController.text
                                               : 'Destino confirmado',
-                                          style: TextStyle(fontSize: 12, color: AppColors.white),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.white),
                                         ),
                                       ),
                                     ],
@@ -678,6 +844,51 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Tarifa estimada
+                      if (_destino != null)
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          margin: EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryYellow.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primaryYellow),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.attach_money,
+                                  color: AppColors.primaryYellow, size: 24),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tarifa estimada',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.mediumGrey,
+                                      ),
+                                    ),
+                                    Text(
+                                      TarifaEstimada.obtenerTextoEstimado(
+                                        origenLat: _userLocation['latitude']!,
+                                        origenLon: _userLocation['longitude']!,
+                                        destinoLat: _destino!['latitude']!,
+                                        destinoLon: _destino!['longitude']!,
+                                      ),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primaryYellow,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       if (_taxistaSeleccionado != null)
                         Container(
                           padding: EdgeInsets.all(12),
@@ -687,47 +898,92 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.successColor),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.check_circle, color: AppColors.successColor),
-                              SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Taxista seleccionado',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.successColor,
-                                      ),
-                                    ),
-                                    Text(
-                                      _taxistasCache.containsKey(_taxistaSeleccionado!['id'])
-                                          ? _taxistasCache[_taxistaSeleccionado!['id']]!.nombreCompleto
-                                          : 'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
-                                      style: TextStyle(fontSize: 12, color: AppColors.mediumGrey),
-                                    ),
-                                    if (_taxistasCache.containsKey(_taxistaSeleccionado!['id'])) ...[
-                                      SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          Icon(Icons.phone, size: 12, color: AppColors.mediumGrey),
-                                          SizedBox(width: 4),
-                                          Text(
-                                            _taxistasCache[_taxistaSeleccionado!['id']]!.telefono ?? 'Sin teléfono',
-                                            style: TextStyle(fontSize: 11, color: AppColors.mediumGrey),
+                              Row(
+                                children: [
+                                  Icon(Icons.check_circle,
+                                      color: AppColors.successColor),
+                                  SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Taxista seleccionado',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.successColor,
+                                          ),
+                                        ),
+                                        Text(
+                                          _taxistasCache.containsKey(
+                                                  _taxistaSeleccionado!['id'])
+                                              ? _taxistasCache[
+                                                      _taxistaSeleccionado![
+                                                          'id']]!
+                                                  .nombreCompleto
+                                              : 'ID: ${_taxistaSeleccionado!['id'].substring(0, 8)}...',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: AppColors.mediumGrey),
+                                        ),
+                                        if (_taxistasCache.containsKey(
+                                            _taxistaSeleccionado!['id'])) ...[
+                                          SizedBox(height: 4),
+                                          Row(
+                                            children: [
+                                              Icon(Icons.phone,
+                                                  size: 12,
+                                                  color: AppColors.mediumGrey),
+                                              SizedBox(width: 4),
+                                              Text(
+                                                _taxistasCache[
+                                                            _taxistaSeleccionado![
+                                                                'id']]!
+                                                        .telefono ??
+                                                    'Sin teléfono',
+                                                style: TextStyle(
+                                                    fontSize: 11,
+                                                    color:
+                                                        AppColors.mediumGrey),
+                                              ),
+                                            ],
                                           ),
                                         ],
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.close,
+                                        color: AppColors.errorColor),
+                                    tooltip: 'Cancelar selección de taxista',
+                                    onPressed: () {
+                                      setState(() {
+                                        _taxistaSeleccionado = null;
+                                      });
+                                      _actualizarMapa();
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'Selección de taxista cancelada'),
+                                          backgroundColor: AppColors.mediumGrey,
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                    padding: EdgeInsets.all(4),
+                                    constraints: BoxConstraints(),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                      
+
                       if (_isSolicitandoViaje)
                         Container(
                           padding: EdgeInsets.all(16),
@@ -737,7 +993,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                               SizedBox(height: 12),
                               Text(
                                 'Esperando respuesta del taxista...',
-                                style: TextStyle(color: AppColors.primaryYellow),
+                                style:
+                                    TextStyle(color: AppColors.primaryYellow),
                               ),
                             ],
                           ),
@@ -748,7 +1005,8 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
                           icon: Icon(Icons.local_taxi, size: 24),
                           label: Text(
                             'Solicitar Viaje',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryYellow,
@@ -768,4 +1026,3 @@ class _SolicitarViajeConMapaPageState extends State<SolicitarViajeConMapaPage> {
     );
   }
 }
-

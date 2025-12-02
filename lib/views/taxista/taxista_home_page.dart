@@ -3,6 +3,7 @@ import 'package:nawii/services/taxista_service.dart';
 import 'package:nawii/views/taxista/viajes_pendientes_page.dart';
 import 'package:nawii/views/perfil_page.dart';
 import 'package:nawii/views/historial_viajes_page.dart';
+import 'package:nawii/views/calificaciones_page.dart';
 
 class TaxistaHomePage extends StatefulWidget {
   @override
@@ -208,9 +209,11 @@ class _TaxistaHomePageState extends State<TaxistaHomePage> {
                     title: Text('Calificaciones'),
                     subtitle: Text('Ver mis calificaciones'),
                     onTap: () {
-                      // TODO: Implementar calificaciones
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Próximamente: Calificaciones')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CalificacionesPage(),
+                        ),
                       );
                     },
                   ),
